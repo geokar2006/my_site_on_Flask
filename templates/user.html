@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Пользыватель: {{ user.name }}, Одобрен: {% if user.is_approved %}Да {% else %}Нет {% endif %}, Админ: {% if
+    user.is_admin %}Да {% else %}Нет {% endif %}</h1>
+<p><h3>Дата регистрации: {{ user.created_date }}</h3>
+<h2>О пользывателе:</h2>
+{% if current_user.is_authenticated and current_user.is_admin %}
+<form action="" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.about.label }}<br>
+        {{ form.about(class="form-control") }}<br>
+    </p>
+    <p>{{ form.is_admin() }} {{ form.is_admin.label }}</p>
+    <p>{{ form.is_approved() }} {{ form.is_approved.label }}</p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% else %}
+<div style="white-space: pre-line">
+    <h2>{{ user.about }}</h2>
+</div>
+{% endif %}
+<br>
+{% if current_user.is_authenticated %}
+<h3>{{ user.email }}</h3>
+{% else %}
+<h3>Войдите или зарегестрируйтесь для просмотра email</h3>
+{% endif %}
+</p>
+
+{% endblock %}

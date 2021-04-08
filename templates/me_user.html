@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <h1>Вы: {{ user.name }}, Одобрены: {% if user.is_approved %}Да {% else %}Нет {% endif %}, Админ: {% if
+        user.is_admin %}Да {% else %}Нет {% endif %}</h1>
+    <p>
+    <h3>Ваша дата регистрации: {{ user.created_date }}</h3>
+    <p>
+    <h2>О вас:</h2><br>
+    {{ form.about(class="form-control") }}<br>
+    {% for error in form.about.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <br>
+    <h2>Ваша почта:</h2>
+    <h3>{{ user.email }}</h3>
+    <br>
+    <p>
+    <h2>Смена пароля:</h2>
+    <p>
+        {{ form.password.label }}<br>
+        {{ form.password(class="form-control", type="password") }}<br>
+    </p>
+    <p>
+        {{ form.password_again.label }}<br>
+        {{ form.password_again(class="form-control", type="password") }}<br>
+    </p>
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% endblock %}
