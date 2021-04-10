@@ -8,7 +8,7 @@ class ItemsForm(FlaskForm):
     content = TextAreaField("Содержание")
     is_private = BooleanField("Приватное")
     need_upload = BooleanField("Нужно загружать файл?")
-    is_file = BooleanField("Файл (иначе ссылка)")
+    is_file = BooleanField("Файл (поставьте галочку, если хотите прикрепить файл)")
     file_link = StringField('Ссылка')
     uploaded_file_link = FileField("Файл")
     submit = SubmitField('Создать')

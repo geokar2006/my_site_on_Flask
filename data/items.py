@@ -1,11 +1,14 @@
 import datetime
 import sqlalchemy
+from flask_login import UserMixin
 from sqlalchemy import orm
+from sqlalchemy.orm import relationship
+from sqlalchemy_serializer import SerializerMixin
 
 from .db_session import SqlAlchemyBase
 
 
-class Items(SqlAlchemyBase):
+class Items(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'items'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
@@ -27,3 +30,5 @@ class Items(SqlAlchemyBase):
     file_link = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     uploaded_file_link = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+    messages = orm.relation("Message", back_populates='item')

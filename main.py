@@ -1,26 +1,37 @@
-from flask import Flask, render_template, redirect, request, make_response, session, abort, send_from_directory, \
-    send_file, url_for
+import io
+
+from flask import Flask, render_template, redirect, request, make_response, session, abort, url_for, send_file
 from dotenv import load_dotenv
 import os
 
+from flask_restful import reqparse, abort, Api, Resource
+from googleapiclient.http import MediaIoBaseDownload
 from wtforms import Label
-
+from APIs.Gdrive import *
+from APIs.files import FileResourceList
+from APIs.items import ItemsListResource, ItemResource
 from data import db_session
 from data.items import Items
+from data.message import Message
 from data.users import User
 from forms.items import ItemsForm
+from forms.message import AddMesageForm
 from forms.users import RegisterForm, LoginForm, AdminEditForm, MeEditForm
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 load_dotenv()
 
 app = Flask(__name__)
+api = Api(app)
+
 app.config['SECRET_KEY'] = os.getenv('KEY')
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+drive = None
 
-@app.route("/page/<int:id>")
+
+@app.route("/page/<int:id>", methods=['GET', 'POST'])
 def item_page(id):
     db_sess = db_session.create_session()
     if current_user.is_authenticated:
@@ -31,6 +42,22 @@ def item_page(id):
     else:
         item = db_sess.query(Items).filter((Items.is_private != True) & (Items.id == id)).first()
         items = db_sess.query(Items).filter(Items.is_private != True)
+    if current_user.is_authenticated:
+        form = AddMesageForm()
+        if form.validate_on_submit():
+            if item:
+                message = Message()
+                message.item = item
+                message.item_id = item.id
+                message.user_id = current_user.id
+                message.user_name = current_user.name
+                message.text = form.text.data
+                item.messages.append(message)
+                db_sess.commit()
+                return render_template("page.html", items=items, item=item, form=form)
+            else:
+                abort(404)
+        return render_template("page.html", items=items, item=item, form=form)
     return render_template("page.html", items=items, item=item)
 
 
@@ -86,14 +113,30 @@ def current_user_page():
     return render_template("me_user.html", user=user, form=form)
 
 
-@app.route("/file/<path:link>")
-def file(link):
+@app.route("/file/<name>")
+def file(name):
     try:
-        if "uploaded" in link:
-            return send_file(link, as_attachment=True)
-        else:
-            return redirect("/", 302)
-    except Exception:
+        api = drive
+        file_list = api.files().list(q=f"'{os.getenv('UPLOADED_GAPI_ID')}' in parents", supportsAllDrives=True,
+                                     includeItemsFromAllDrives=True).execute()['files']
+        for i in file_list:
+            if i['name'] == name:
+                file_id = i['id']
+                request = api.files().get_media(fileId=file_id)
+                fh = io.BytesIO()
+                downloader = MediaIoBaseDownload(fh, request)
+                done = False
+                while done is False:
+                    status, done = downloader.next_chunk()
+                fh.seek(0)
+                response = make_response(fh.read())
+                response.headers.set('Content-Type', str(i['mimeType']).split("/")[-1])
+                response.headers.set('Content-Disposition', 'attachment',
+                                     filename=name)
+                return response
+        return redirect("/", 302)
+    except Exception as ex:
+        print(f"DOWNLOAD ERROR: {ex}")
         return redirect("/", 302)
 
 
@@ -169,13 +212,11 @@ def add_item():
             items.need_upload = form.need_upload.data
             items.is_file = form.is_file.data
             items.is_private = form.is_private.data
-            if not form.need_upload.data and form.is_file.data:
+            if form.need_upload.data and form.is_file.data:
                 f = form.uploaded_file_link.data
                 filename = f.filename
-                f.save(os.path.join(
-                    app.root_path, 'uploaded', filename
-                ))
-                items.uploaded_file_link = f"/file/uploaded/{filename}"
+                upload_file(drive, filename, f.stream)
+                items.uploaded_file_link = filename
             elif not form.need_upload.data:
                 items.file_link = form.file_link.data
             current_user.items.append(items)
@@ -194,11 +235,6 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-def main():
-    db_session.global_init('db/site_data.db')
-    app.run(host='127.0.0.1', port=8080)
-
-
 @app.route('/item/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_item(id):
@@ -212,6 +248,7 @@ def edit_item(id):
         if item:
             form.title.data = item.title
             form.content.data = item.content
+            form.need_upload.data = item.need_upload
             form.is_private.data = item.is_private
             form.is_file.data = item.is_file
             form.submit.label = Label(form.submit.id, "Изменить")
@@ -228,14 +265,11 @@ def edit_item(id):
             item.is_private = form.is_private.data
             item.need_upload = form.need_upload.data
             item.is_file = form.is_file.data
-            if not form.need_upload.data and form.is_file.data:
+            if form.need_upload.data and form.is_file.data:
                 f = form.uploaded_file_link.data
-                print(f)
                 filename = f.filename
-                f.save(os.path.join(
-                    app.root_path, 'uploaded', filename
-                ))
-                item.uploaded_file_link = f"/file/uploaded/{filename}"
+                upload_file(drive, filename, f.stream)
+                item.uploaded_file_link = filename
             elif not form.need_upload.data:
                 item.file_link = form.file_link
             db_sess.commit()
@@ -261,6 +295,16 @@ def item_delete(id):
     else:
         abort(404)
     return redirect('/')
+
+
+def main():
+    global drive
+    drive = DRIVEgetAPI()
+    api.add_resource(ItemsListResource, '/api/v2/items')
+    api.add_resource(ItemResource, '/api/v2/item/<int:id>')
+    api.add_resource(FileResourceList, '/api/v2/files')
+    db_session.global_init('db/site_data.db')
+    app.run(host='127.0.0.1', port=8080)
 
 
 if __name__ == '__main__':

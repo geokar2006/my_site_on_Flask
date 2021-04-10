@@ -3,7 +3,6 @@
 {% block content %}
 <h1>{{ item.title }}</h1>
 <div class="col-md6 border rounded">
-
     <h3>Автор - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{item.user.name}}</a>, Дата написания -
         {{item.created_date}}</h3>
     <p>
@@ -18,19 +17,42 @@
         {% if item.is_file %}
         <p>
         <h5>Файл:</h5>
-        <a class="btn btn-primary" href="{{item.uploaded_file_link}}">Скачать</a>
+        <a class="btn btn-primary" href="/file/{{item.uploaded_file_link}}">Скачать</a>
         </p>
         {% else %}
         <p>
-            <h5>Ссылка:</h5>
-            <a class="btn btn-primary" href="{{item.file_link}}">Перейти</a>
+        <h5>Ссылка:</h5>
+        <a class="btn btn-primary" href="{{item.file_link}}">Перейти</a>
         </p>
         {% endif %}
         {% else %}
-        <h4>Войдите или зарегестрируйтесь для получения доступа к ссылке или файлу</h4>
+        <h4>Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу</h4>
         {% endif %}
     </div>
     </p>
     {% endif %}
 </div>
+
+<div class="col-md6 border rounded">
+    <h3>Комментарии:</h3>
+    {% if current_user.is_authenticated %}
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+        {{ form.text.label }}<br>
+        {{ form.text(class="form-control") }}<br>
+        </p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    </form>
+    {% else %}
+{% endif %}
+    {% for comment in item.messages %}
+
+    <div class="col-md6 border rounded" style="white-space: pre-line">
+        <h4>Комментраий пользователя "{{comment.user_name}}":</h4>
+        <h5>{{comment.text}}</h5>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}
