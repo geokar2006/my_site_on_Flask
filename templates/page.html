@@ -17,7 +17,7 @@
         {% if item.is_file %}
         <p>
         <h5>Файл:</h5>
-        <a class="btn btn-primary" href="/file/{{item.uploaded_file_link}}">Скачать</a>
+        <a class="btn btn-primary" href="/file/{{item.uploaded_file_secured_name}}">Скачать</a>
         </p>
         {% else %}
         <p>
@@ -45,12 +45,24 @@
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
     </form>
     {% else %}
+    <h4>Войдите или зарегестрируйтесть для того чтобы оставить комментарий</h4>
 {% endif %}
     {% for comment in item.messages %}
-
-    <div class="col-md6 border rounded" style="white-space: pre-line">
+    <div class="col-md6 border rounded">
         <h4>Комментраий пользователя "{{comment.user_name}}":</h4>
+        <div style="white-space: pre-line">
         <h5>{{comment.text}}</h5>
+        </div>
+        {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.is_admin) %}
+        <div
+        ><a href="/page/{{ item.id }}/message/{{loop.index0}}" class="btn btn-warning">
+            Изменить
+        </a>
+        <a href="/page/{{ item.id }}/remove_message/{{comment.id}}" class="btn btn-danger">
+            Удалить
+        </a>
+        </div>
+        {% endif %}
     </div>
     {% endfor %}
 </div>

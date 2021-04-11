@@ -6,16 +6,16 @@ import os
 
 from flask_restful import reqparse, abort, Api, Resource
 from googleapiclient.http import MediaIoBaseDownload
+from werkzeug.utils import secure_filename
 from wtforms import Label
 from APIs.Gdrive import *
-from APIs.files import FileResourceList
 from APIs.items import ItemsListResource, ItemResource
 from data import db_session
 from data.items import Items
 from data.message import Message
 from data.users import User
 from forms.items import ItemsForm
-from forms.message import AddMesageForm
+from forms.message import AddMesageForm, EditMesageForm
 from forms.users import RegisterForm, LoginForm, AdminEditForm, MeEditForm
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
@@ -30,6 +30,48 @@ login_manager.init_app(app)
 
 drive = None
 
+@app.route("/page/<int:id>/remove_message/<int:mes_id>", methods=['GET', 'POST'])
+def remove_message(id, mes_id):
+    db_sess = db_session.create_session()
+    mesage = db_sess.query(Message).filter(Message.item_id == id, Message.id == mes_id).first()
+    if current_user.is_authenticated and (current_user.id == mesage.id or current_user.is_admin):
+        if mesage:
+            db_sess.delete(mesage)
+            db_sess.commit()
+        return redirect(f'/page/{id}', 302)
+    else:
+        abort(404)
+    return redirect(f'/page/{id}', 302)
+
+
+
+@app.route("/page/<int:id>/message/<int:mes_id>", methods=['GET', 'POST'])
+def edit_message(id, mes_id):
+    db_sess = db_session.create_session()
+    if current_user.is_authenticated:
+        item = db_sess.query(Items).filter(
+            ((Items.user == current_user) | (Items.is_private != True)) & (Items.id == id)).first()
+        items = db_sess.query(Items).filter(
+            (Items.user == current_user) | (Items.is_private != True))
+    else:
+        item = db_sess.query(Items).filter((Items.is_private != True) & (Items.id == id)).first()
+        items = db_sess.query(Items).filter(Items.is_private != True)
+    if current_user.is_authenticated:
+        form = EditMesageForm()
+        if request.method == "GET":
+            if form:
+                form.text.data = item.messages[mes_id].text
+            else:
+                abort(404)
+        if form.validate_on_submit():
+            if item:
+                item.messages[mes_id].text = form.text.data
+                db_sess.commit()
+                return redirect(f"/page/{id}", 302)
+            else:
+                abort(404)
+        return render_template("page.html", items=items, item=item, form=form)
+    return redirect(f"/page/{id}", 302)
 
 @app.route("/page/<int:id>", methods=['GET', 'POST'])
 def item_page(id):
@@ -116,13 +158,12 @@ def current_user_page():
 @app.route("/file/<name>")
 def file(name):
     try:
-        api = drive
-        file_list = api.files().list(q=f"'{os.getenv('UPLOADED_GAPI_ID')}' in parents", supportsAllDrives=True,
-                                     includeItemsFromAllDrives=True).execute()['files']
+        file_list = drive.files().list(q=f"'{os.getenv('GAPI_FOLDER_ID')}' in parents", supportsAllDrives=True,
+                                       includeItemsFromAllDrives=True).execute()['files']
         for i in file_list:
             if i['name'] == name:
                 file_id = i['id']
-                request = api.files().get_media(fileId=file_id)
+                request = drive.files().get_media(fileId=file_id)
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
@@ -131,12 +172,14 @@ def file(name):
                 fh.seek(0)
                 response = make_response(fh.read())
                 response.headers.set('Content-Type', str(i['mimeType']).split("/")[-1])
+                db_sess = db_session.create_session()
+                item = db_sess.query(Items).filter(
+                        (Items.uploaded_file_secured_name == name)).first()
                 response.headers.set('Content-Disposition', 'attachment',
-                                     filename=name)
+                                     filename=item.uploaded_file_name)
                 return response
         return redirect("/", 302)
     except Exception as ex:
-        print(f"DOWNLOAD ERROR: {ex}")
         return redirect("/", 302)
 
 
@@ -205,21 +248,24 @@ def add_item():
         form = ItemsForm()
         if form.validate_on_submit():
             db_sess = db_session.create_session()
-            items = Items()
-            items.title = form.title.data
-            items.content = form.content.data
-            items.user = current_user
-            items.need_upload = form.need_upload.data
-            items.is_file = form.is_file.data
-            items.is_private = form.is_private.data
+            db_sess.expire_on_commit = False
+            item = Items()
+            item.title = form.title.data
+            item.content = form.content.data
+            item.user = current_user
+            item.need_upload = form.need_upload.data
+            item.is_file = form.is_file.data
+            item.is_private = form.is_private.data
             if form.need_upload.data and form.is_file.data:
-                f = form.uploaded_file_link.data
+                f = form.uploaded_file.data
                 filename = f.filename
-                upload_file(drive, filename, f.stream)
-                items.uploaded_file_link = filename
+                sfilename = secure_filename(f.filename)
+                upload_file(drive, sfilename, f.stream)
+                item.uploaded_file_secured_name = sfilename
+                item.uploaded_file_name = filename
             elif not form.need_upload.data:
-                items.file_link = form.file_link.data
-            current_user.items.append(items)
+                item.file_link = form.file_link.data
+            current_user.items.append(item)
             db_sess.merge(current_user)
             db_sess.commit()
             return redirect('/')
@@ -266,10 +312,12 @@ def edit_item(id):
             item.need_upload = form.need_upload.data
             item.is_file = form.is_file.data
             if form.need_upload.data and form.is_file.data:
-                f = form.uploaded_file_link.data
+                f = form.uploaded_file.data
                 filename = f.filename
-                upload_file(drive, filename, f.stream)
-                item.uploaded_file_link = filename
+                sfilename = secure_filename(f.filename)
+                upload_file(drive, sfilename, f.stream)
+                item.uploaded_file_secured_name = sfilename
+                item.uploaded_file_name = filename
             elif not form.need_upload.data:
                 item.file_link = form.file_link
             db_sess.commit()
@@ -290,6 +338,11 @@ def item_delete(id):
                                        Items.user == current_user
                                        ).first()
     if item:
+        file_list = drive.files().list(q=f"'{os.getenv('GAPI_FOLDER_ID')}' in parents", supportsAllDrives=True,
+                                       includeItemsFromAllDrives=True).execute()['files']
+        for i in file_list:
+            if i['name'] == item.uploaded_file_secured_name:
+                drive.files().delete(fileId=i['id'], supportsAllDrives=True, supportsTeamDrives=True).execute()
         db_sess.delete(item)
         db_sess.commit()
     else:
@@ -299,11 +352,10 @@ def item_delete(id):
 
 def main():
     global drive
-    drive = DRIVEgetAPI()
+    drive = DRIVEgetAPI(os.path.join(app.root_path, "creds.json"))
     api.add_resource(ItemsListResource, '/api/v2/items')
     api.add_resource(ItemResource, '/api/v2/item/<int:id>')
-    api.add_resource(FileResourceList, '/api/v2/files')
-    db_session.global_init('db/site_data.db')
+    db_session.global_init(os.path.join(app.root_path, 'db/site_data.db'))
     app.run(host='127.0.0.1', port=8080)
 
 
