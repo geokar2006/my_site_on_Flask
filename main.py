@@ -1,11 +1,8 @@
-import io
-
-from flask import Flask, render_template, redirect, request, make_response, session, abort, url_for, send_file
+import json
+import random
+from flask import Flask, render_template, redirect, request, abort
 from dotenv import load_dotenv
-import os
-
-from flask_restful import reqparse, abort, Api, Resource
-from googleapiclient.http import MediaIoBaseDownload
+from flask_restful import abort, Api
 from werkzeug.utils import secure_filename
 from wtforms import Label
 from APIs.Gdrive import *
@@ -30,6 +27,7 @@ login_manager.init_app(app)
 
 drive = None
 
+
 @app.route("/page/<int:id>/remove_message/<int:mes_id>", methods=['GET', 'POST'])
 def remove_message(id, mes_id):
     db_sess = db_session.create_session()
@@ -42,7 +40,6 @@ def remove_message(id, mes_id):
     else:
         abort(404)
     return redirect(f'/page/{id}', 302)
-
 
 
 @app.route("/page/<int:id>/message/<int:mes_id>", methods=['GET', 'POST'])
@@ -73,6 +70,26 @@ def edit_message(id, mes_id):
         return render_template("page.html", items=items, item=item, form=form)
     return redirect(f"/page/{id}", 302)
 
+
+@app.route("/page_download", methods=['POST'])
+def page_download():
+    global exporting_threads
+    if request.method == "POST":
+        name = request.form['filename']
+        if check_if_file_exist(drive, name):
+            file_list = drive.files().list(q=f"'{os.getenv('GAPI_FOLDER_ID')}' in parents", supportsAllDrives=True,
+                                           includeItemsFromAllDrives=True).execute()['files']
+            idd, type = -1, ""
+            for i in file_list:
+                if i['name'] == name:
+                    idd = i['id']
+                    type = str(i['mimeType']).split("/")[-1]
+            thread_id = str(random.randint(0, 10000))
+            exporting_threads[thread_id] = Downloader(idd, name, type, drive, app, thread_id)
+            exporting_threads[thread_id].start()
+            return json.dumps({'success': 'true', 'id': int(thread_id)})
+
+
 @app.route("/page/<int:id>", methods=['GET', 'POST'])
 def item_page(id):
     db_sess = db_session.create_session()
@@ -84,9 +101,9 @@ def item_page(id):
     else:
         item = db_sess.query(Items).filter((Items.is_private != True) & (Items.id == id)).first()
         items = db_sess.query(Items).filter(Items.is_private != True)
-    if current_user.is_authenticated:
-        form = AddMesageForm()
-        if form.validate_on_submit():
+    form = AddMesageForm()
+    if request.method == "POST":
+        if current_user.is_authenticated and form.validate_on_submit():
             if item:
                 message = Message()
                 message.item = item
@@ -99,8 +116,7 @@ def item_page(id):
                 return render_template("page.html", items=items, item=item, form=form)
             else:
                 abort(404)
-        return render_template("page.html", items=items, item=item, form=form)
-    return render_template("page.html", items=items, item=item)
+    return render_template("page.html", items=items, item=item, form=form)
 
 
 @app.route("/user/<int:id>", methods=['GET', 'POST'])
@@ -153,34 +169,6 @@ def current_user_page():
         else:
             abort(404)
     return render_template("me_user.html", user=user, form=form)
-
-
-@app.route("/file/<name>")
-def file(name):
-    try:
-        file_list = drive.files().list(q=f"'{os.getenv('GAPI_FOLDER_ID')}' in parents", supportsAllDrives=True,
-                                       includeItemsFromAllDrives=True).execute()['files']
-        for i in file_list:
-            if i['name'] == name:
-                file_id = i['id']
-                request = drive.files().get_media(fileId=file_id)
-                fh = io.BytesIO()
-                downloader = MediaIoBaseDownload(fh, request)
-                done = False
-                while done is False:
-                    status, done = downloader.next_chunk()
-                fh.seek(0)
-                response = make_response(fh.read())
-                response.headers.set('Content-Type', str(i['mimeType']).split("/")[-1])
-                db_sess = db_session.create_session()
-                item = db_sess.query(Items).filter(
-                        (Items.uploaded_file_secured_name == name)).first()
-                response.headers.set('Content-Disposition', 'attachment',
-                                     filename=item.uploaded_file_name)
-                return response
-        return redirect("/", 302)
-    except Exception as ex:
-        return redirect("/", 302)
 
 
 @app.route("/")
@@ -257,10 +245,10 @@ def add_item():
             item.is_file = form.is_file.data
             item.is_private = form.is_private.data
             if form.need_upload.data and form.is_file.data:
-                f = form.uploaded_file.data
-                filename = f.filename
-                sfilename = secure_filename(f.filename)
-                upload_file(drive, sfilename, f.stream)
+                # f = form.uploaded_file.data
+                filename = form.uploaded_file.data.filename
+                sfilename = secure_filename(filename)
+                upload_file(drive, sfilename, form.uploaded_file.data.stream)
                 item.uploaded_file_secured_name = sfilename
                 item.uploaded_file_name = filename
             elif not form.need_upload.data:
@@ -284,50 +272,50 @@ def load_user(user_id):
 @app.route('/item/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_item(id):
-    form = ItemsForm()
-    if request.method == "GET":
-        db_sess = db_session.create_session()
-        if current_user.is_admin:
-            item = db_sess.query(Items).filter(Items.id == id).first()
-        else:
-            item = db_sess.query(Items).filter(Items.id == id, Items.user == current_user).first()
-        if item:
-            form.title.data = item.title
-            form.content.data = item.content
-            form.need_upload.data = item.need_upload
-            form.is_private.data = item.is_private
-            form.is_file.data = item.is_file
-            form.submit.label = Label(form.submit.id, "Изменить")
-        else:
-            abort(404)
-    if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        item = db_sess.query(Items).filter(Items.id == id,
-                                           Items.user == current_user
-                                           ).first()
-        if item:
-            item.title = form.title.data
-            item.content = form.content.data
-            item.is_private = form.is_private.data
-            item.need_upload = form.need_upload.data
-            item.is_file = form.is_file.data
-            if form.need_upload.data and form.is_file.data:
-                f = form.uploaded_file.data
-                filename = f.filename
-                sfilename = secure_filename(f.filename)
-                upload_file(drive, sfilename, f.stream)
-                item.uploaded_file_secured_name = sfilename
-                item.uploaded_file_name = filename
-            elif not form.need_upload.data:
-                item.file_link = form.file_link
-            db_sess.commit()
-            return redirect('/')
-        else:
-            abort(404)
-    return render_template('add_item.html',
-                           title='Редактирование новости',
-                           form=form
-                           )
+    if current_user.is_admin or current_user.is_approved:
+        form = ItemsForm()
+        if request.method == "GET":
+            db_sess = db_session.create_session()
+            if current_user.is_admin:
+                item = db_sess.query(Items).filter(Items.id == id).first()
+            else:
+                item = db_sess.query(Items).filter(Items.id == id, Items.user == current_user).first()
+            if item:
+                form.title.data = item.title
+                form.content.data = item.content
+                form.need_upload.data = item.need_upload
+                form.is_private.data = item.is_private
+                form.is_file.data = item.is_file
+                form.submit.label = Label(form.submit.id, "Изменить")
+            else:
+                abort(404)
+        if form.validate_on_submit():
+            db_sess = db_session.create_session()
+            item = db_sess.query(Items).filter(Items.id == id,
+                                               Items.user == current_user
+                                               ).first()
+            if item:
+                item.title = form.title.data
+                item.content = form.content.data
+                item.is_private = form.is_private.data
+                item.need_upload = form.need_upload.data
+                item.is_file = form.is_file.data
+                if form.need_upload.data and form.is_file.data:
+                    filename = form.uploaded_file.data.filename
+                    sfilename = secure_filename(filename)
+                    upload_file(drive, sfilename, form.uploaded_file.data.stream)
+                    item.uploaded_file_secured_name = sfilename
+                    item.uploaded_file_name = filename
+                elif not form.need_upload.data:
+                    item.file_link = form.file_link
+                db_sess.commit()
+                return redirect('/')
+            else:
+                abort(404)
+        return render_template('add_item.html',
+                               title='Редактирование записи',
+                               form=form
+                               )
 
 
 @app.route('/item_delete/<int:id>', methods=['GET', 'POST'])
@@ -348,6 +336,21 @@ def item_delete(id):
     else:
         abort(404)
     return redirect('/')
+
+
+@app.route('/progress/<int:thread_id>')
+def progress(thread_id):
+    global exporting_threads
+
+    return str(exporting_threads[str(thread_id)].progress)
+
+
+@app.route('/finish_progress/<int:thread_id>')
+def finish_progress(thread_id):
+    global exporting_threads
+    resp = exporting_threads[str(thread_id)].resp
+    exporting_threads.pop(str(thread_id))
+    return resp
 
 
 def main():

@@ -1,70 +1,143 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{ item.title }}</h1>
-<div class="col-md6 border rounded">
-    <h3>Автор - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{item.user.name}}</a>, Дата написания -
-        {{item.created_date}}</h3>
-    <p>
-    <h4>Текст:</h4>
-    <div style="white-space: pre-line">
-        <h3>{{item.content}}</h3>
-    </div>
-    <br>
-    {% if item.need_upload %}
-    <div>
-        {% if current_user.is_authenticated %}
-        {% if item.is_file %}
-        <p>
-        <h5>Файл:</h5>
-        <a class="btn btn-primary" href="/file/{{item.uploaded_file_secured_name}}">Скачать</a>
-        </p>
-        {% else %}
-        <p>
-        <h5>Ссылка:</h5>
-        <a class="btn btn-primary" href="{{item.file_link}}">Перейти</a>
-        </p>
-        {% endif %}
-        {% else %}
-        <h4>Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу</h4>
-        {% endif %}
-    </div>
-    </p>
-    {% endif %}
-</div>
-
-<div class="col-md6 border rounded">
-    <h3>Комментарии:</h3>
-    {% if current_user.is_authenticated %}
-    <form action="" method="post">
-        {{ form.hidden_tag() }}
-        <p>
-        {{ form.text.label }}<br>
-        {{ form.text(class="form-control") }}<br>
-        </p>
-        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
-    </form>
-    {% else %}
-    <h4>Войдите или зарегестрируйтесть для того чтобы оставить комментарий</h4>
-{% endif %}
-    {% for comment in item.messages %}
+    <h1>{{ item.title }}</h1>
     <div class="col-md6 border rounded">
-        <h4>Комментраий пользователя "{{comment.user_name}}":</h4>
+        <h3>Автор - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, Дата написания -
+            {{ item.created_date }}</h3>
+        <p>
+        <h4>Текст:</h4>
         <div style="white-space: pre-line">
-        <h5>{{comment.text}}</h5>
+            <h3>{{ item.content }}</h3>
         </div>
-        {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.is_admin) %}
-        <div
-        ><a href="/page/{{ item.id }}/message/{{loop.index0}}" class="btn btn-warning">
-            Изменить
-        </a>
-        <a href="/page/{{ item.id }}/remove_message/{{comment.id}}" class="btn btn-danger">
-            Удалить
-        </a>
-        </div>
+        <br>
+        {% if item.need_upload %}
+            <div>
+                {% if current_user.is_authenticated %}
+                    {% if item.is_file %}
+                        <form action="" id="downform" method="post">
+                            <p>
+                            <h5 id="dwn_txt">Файл:</h5>
+                            <input class="btn btn-primary" type="submit" id="dwn_btn" value="Скачать"/>
+                            <progress value="0" max="100" hidden=true id="downprog"></progress>
+                            </p>
+                        </form>
+
+                        <script>
+                            function check_progress(task_id) {
+                                var timeout = 1000;
+                                var dotnum = 0;
+                                document.getElementById("dwn_btn").hidden = true;
+                                progress_bar = document.getElementById("downprog");
+                                progress_bar.hidden = false;
+                                var downlaoding = function (task_id) {
+                                    $.ajax({
+                                        type: 'GET',
+                                        url: '/progress/' + task_id,
+                                    }).done(function (progress) {
+                                        if (progress < 101) {
+                                            document.getElementById("dwn_txt").textContent = "Загрузка" + '...'.slice(0, dotnum)
+                                            dotnum++;
+                                            if (dotnum > 3){
+                                                dotnum = 0;
+                                            }
+                                            progress_bar.value = progress;
+                                            setTimeout(downlaoding, timeout, task_id);
+                                        } else {
+                                            window.location.href = "/finish_progress/" + task_id
+                                            progress_bar.value = 0
+                                            progress_bar.hidden = true
+                                            document.getElementById("dwn_btn").hidden = false;
+                                            document.getElementById("dwn_txt").textContent = "Файл:"
+                                            document.getElementById("downform").reset()
+                                            id = undefined;
+                                        }
+                                    });
+                                };
+                                downlaoding(task_id);
+                            }
+                            var id = undefined;
+                            $(document).ready(function () {
+                                $("#downform").submit(function (event) {
+                                    var timeout = 1000;
+                                    sendAjaxForm("downform", '{{ item.uploaded_file_secured_name }}');
+                                    var wait = function () {
+                                        if (id == undefined) {
+                                            setTimeout(wait, timeout);
+                                        } else {
+                                            if (id !== -1) {
+                                                check_progress(id);
+                                            }
+                                        }
+                                    }
+                                    if (id == undefined) {
+                                        wait();
+                                    }
+                                    event.preventDefault();
+                                });
+                            });
+
+                            function sendAjaxForm(form_ajax, msg) {
+                                $.ajax({
+                                    data: {filename: msg},
+                                    type: 'POST',
+                                    url: '/page_download',
+                                }).done(function (response) {
+                                    var json = jQuery.parseJSON(response);
+                                    if (json.success == 'true') {
+                                        id = json.id;
+                                    } else {
+                                        id = -1;
+                                    }
+                                });
+                            }
+                        </script>
+                    {% else %}
+                        <p>
+                        <h5>Ссылка:</h5>
+                        <a class="btn btn-primary" href="{{ item.file_link }}">Перейти</a>
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <h4>Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу</h4>
+                {% endif %}
+            </div>
+            </p>
         {% endif %}
     </div>
-    {% endfor %}
-</div>
+
+    <div class="col-md6 border rounded">
+        <h3>Комментарии:</h3>
+        {% if current_user.is_authenticated %}
+            <form action="" method="post">
+                {{ form.hidden_tag() }}
+                <p>
+                    {{ form.text.label }}<br>
+                    {{ form.text(class="form-control") }}<br>
+                </p>
+                <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+            </form>
+        {% else %}
+            <h4>Войдите или зарегестрируйтесть для того чтобы оставить комментарий</h4>
+        {% endif %}
+        {% for comment in item.messages %}
+            <div class="col-md6 border rounded">
+                <h4>Комментраий пользователя "{{ comment.user_name }}":</h4>
+                <div style="white-space: pre-line">
+                    <h5>{{ comment.text }}</h5>
+                </div>
+                {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.is_admin) %}
+                    <div
+                    ><a href="/page/{{ item.id }}/message/{{ loop.index0 }}" class="btn btn-warning">
+                        Изменить
+                    </a>
+                        <a href="/page/{{ item.id }}/remove_message/{{ comment.id }}" class="btn btn-danger">
+                            Удалить
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
 
 {% endblock %}

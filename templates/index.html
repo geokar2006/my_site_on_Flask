@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Записи в блоге</h1>
+<h1>Посты</h1>
 {% for item in items%}
 <div class="col-md6 border rounded">
     <h2><a href="/page/{{ item.id }}">{{item.title}}</a></h2>

@@ -1,33 +1,71 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Добавление новости</h1>
-<form action="" method="post" enctype="multipart/form-data">
-    {{ form.hidden_tag() }}
-    <p>
-        {{ form.title.label }}<br>
-        {{ form.title(class="form-control") }}<br>
-        {% for error in form.title.errors %}
-            <p class="alert alert-danger" role="alert">
-                {{ error }}
-            </p>
-        {% endfor %}
-    </p>
-    <p>
-        {{ form.content.label }}<br>
-        {{ form.content(class="form-control") }}<br>
-        {% for error in form.content.errors %}
-            <p content="alert alert-danger" role="alert">
-                {{ error }}
-            </p>
-        {% endfor %}
-    </p>
-    <p>{{ form.need_upload() }} {{ form.need_upload.label }}</p>
-    <p>{{ form.is_file() }} {{ form.is_file.label }}</p>
-    <p>{{ form.file_link() }} {{ form.file_link.label }}</p>
-    <p>{{ form.uploaded_file() }}</p>
-    <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
-    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
-    {{message}}
-</form>
+    <h1>Добавление записи</h1>
+    <script>
+        function file_checker() {
+            var chbox;
+            var link;
+            var upload;
+            chbox = document.getElementById('in_file');
+            link = document.getElementById('link');
+            upload = document.getElementById('upload');
+            if (chbox.checked) {
+                link.hidden = true;
+                upload.hidden = false;
+            } else {
+                link.hidden = false;
+                upload.hidden = true;
+            }
+        }
+
+        function need_checker() {
+            var chbox;
+            var link;
+            var upload;
+            var chbox_l;
+            chbox = document.getElementById('in_need');
+            chbox_l = document.getElementById('in_file_l');
+            link = document.getElementById('link');
+            upload = document.getElementById('upload');
+            if (chbox.checked) {
+                chbox_l.hidden = false;
+                file_checker();
+            } else {
+                chbox_l.hidden = true;
+                link.hidden = true;
+                upload.hidden = true;
+            }
+        }
+
+        window.onload = need_checker;
+    </script>
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.title.label }}<br>
+            {{ form.title(class="form-control") }}<br>
+            {% for error in form.title.errors %}
+                <p class="alert alert-danger" role="alert">
+                    {{ error }}
+                </p>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.content.label }}<br>
+            {{ form.content(class="form-control") }}<br>
+            {% for error in form.content.errors %}
+                <p content="alert alert-danger" role="alert">
+                    {{ error }}
+                </p>
+            {% endfor %}
+        </p>
+        <p>{{ form.need_upload(id='in_need', onchange="need_checker()") }} {{ form.need_upload.label }}</p>
+        <p id='in_file_l'>{{ form.is_file(id='in_file', onchange="file_checker()") }} {{ form.is_file.label }}</p>
+        <p id='link'>{{ form.file_link.label }}: {{ form.file_link() }}</p>
+        <p id='upload' hidden={{ form.is_file.data }}>{{ form.uploaded_file() }}</p>
+        <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        {{ message }}
+    </form>
 {% endblock %}
