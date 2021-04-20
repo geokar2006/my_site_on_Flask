@@ -252,7 +252,6 @@ def add_item():
         form = ItemsForm()
         if request.method == "POST":
             db_sess = db_session.create_session()
-            print(form.data)
             db_sess.expire_on_commit = False
             item = Items()
             item.title = form.title.data
