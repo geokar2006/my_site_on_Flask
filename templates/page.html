@@ -20,16 +20,31 @@
                             <h5 id="dwn_txt">Файл:</h5>
                             <input class="btn btn-primary" type="submit" id="dwn_btn" value="Скачать"/>
                             <progress value="0" max="100" hidden=true id="downprog"></progress>
+                            <h5 id="percent" hidden=true>0%</h5>
                             </p>
                         </form>
-
                         <script>
+                            function checkbyname() {
+                                var filename = '{{ item.uploaded_file_secured_name }}';
+                                var res;
+                                $.ajax({
+                                    type: 'GET',
+                                    async: false,
+                                    url: '/check_file_uploaded/' + filename,
+                                }).done(function (resp) {
+                                    res = (resp == "True");
+                                });
+                                return res;
+                            }
+
                             function check_progress(task_id) {
                                 var timeout = 1000;
                                 var dotnum = 0;
                                 document.getElementById("dwn_btn").hidden = true;
                                 progress_bar = document.getElementById("downprog");
+                                percent = document.getElementById("percent");
                                 progress_bar.hidden = false;
+                                percent.hidden = false;
                                 var downlaoding = function (task_id) {
                                     $.ajax({
                                         type: 'GET',
@@ -38,44 +53,55 @@
                                         if (progress < 101) {
                                             document.getElementById("dwn_txt").textContent = "Загрузка" + '...'.slice(0, dotnum)
                                             dotnum++;
-                                            if (dotnum > 3){
+                                            if (dotnum > 3) {
                                                 dotnum = 0;
                                             }
                                             progress_bar.value = progress;
+                                            percent.textContent = progress + "%";
                                             setTimeout(downlaoding, timeout, task_id);
                                         } else {
-                                            window.location.href = "/finish_progress/" + task_id
-                                            progress_bar.value = 0
-                                            progress_bar.hidden = true
+                                            window.location.href = "/finish_progress/" + task_id;
+                                            progress_bar.value = 0;
+                                            progress_bar.hidden = true;
+                                            percent.hidden = true;
                                             document.getElementById("dwn_btn").hidden = false;
-                                            document.getElementById("dwn_txt").textContent = "Файл:"
-                                            document.getElementById("downform").reset()
+                                            document.getElementById("dwn_txt").textContent = "Файл:";
+                                            document.getElementById("downform").reset();
                                             id = undefined;
                                         }
                                     });
                                 };
                                 downlaoding(task_id);
                             }
+
                             var id = undefined;
                             $(document).ready(function () {
                                 $("#downform").submit(function (event) {
-                                    var timeout = 1000;
-                                    sendAjaxForm("downform", '{{ item.uploaded_file_secured_name }}');
-                                    var wait = function () {
-                                        if (id == undefined) {
-                                            setTimeout(wait, timeout);
-                                        } else {
-                                            if (id !== -1) {
-                                                check_progress(id);
+                                    if (!checkbyname()) {
+                                        var percent = document.getElementById("percent");
+                                        percent.textContent = "Запрашиваемый файл не найден на сервере";
+                                        percent.hidden = false;
+                                    } else {
+                                        var timeout = 1000;
+                                        sendAjaxForm("downform", '{{ item.uploaded_file_secured_name }}');
+                                        var wait = function () {
+                                            if (id == undefined) {
+                                                setTimeout(wait, timeout);
+                                            } else {
+                                                if (id !== -1) {
+                                                    check_progress(id);
+                                                }
                                             }
                                         }
-                                    }
-                                    if (id == undefined) {
-                                        wait();
+                                        if (id == undefined) {
+                                            wait();
+                                        }
                                     }
                                     event.preventDefault();
+
                                 });
-                            });
+                            })
+                            ;
 
                             function sendAjaxForm(form_ajax, msg) {
                                 $.ajax({

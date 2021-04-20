@@ -1,9 +1,10 @@
 import io
 import os
+import tempfile
 import threading
 import time
 
-from flask import make_response
+from flask import make_response, redirect
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaInMemoryUpload, MediaIoBaseDownload
 from oauth2client.service_account import ServiceAccountCredentials
@@ -13,12 +14,6 @@ from data.items import Items
 from main import app
 
 cerd = None
-
-
-def getFileByteSize(filename):
-    from os import stat
-    file_stats = stat(filename)
-    return file_stats.st_size
 
 
 def check_if_file_exist(drive_service, filename):
@@ -33,19 +28,22 @@ def check_if_file_exist(drive_service, filename):
 def upload_file(drive_service, filename, data, resumable=True, chunksize=262144):
     if check_if_file_exist(drive_service, filename):
         return
-    media = MediaInMemoryUpload(data.read(), resumable=resumable, chunksize=chunksize)
+    media = MediaInMemoryUpload(data, resumable=resumable, chunksize=chunksize)
     body = {"name": filename, 'kind': 'drive#fileLink', 'teamDriveId': os.getenv("DRIVE_ID"),
             'parents': [os.getenv("GAPI_FOLDER_ID")]}
-    drive_service.files().create(supportsAllDrives=True, body=body, media_body=media).execute()
+    return drive_service.files().create(supportsAllDrives=True, body=body, media_body=media).execute()
 
 
 def DRIVEgetAPI(credspath):
+    global cerd
     if credspath == None:
         if cerd == None:
             return None
-        credspath = cerd
+        return cerd
     scope = ['https://www.googleapis.com/auth/drive']
     credentials = ServiceAccountCredentials.from_json_keyfile_name(credspath, scope)
+    if cerd == None:
+        cerd = build('drive', 'v3', credentials=credentials)
     return build('drive', 'v3', credentials=credentials)
 
 
@@ -84,6 +82,38 @@ class Downloader(threading.Thread):
             self.resp.headers.set('Content-Disposition', 'attachment',
                                   filename=item.uploaded_file_name)
         self.progress = 101
+
+
+class Uploader(threading.Thread):
+    def __init__(self, fname, data, size, drive, app):
+        super().__init__()
+        self.progress = 0
+        self.name = fname
+        self.data = data
+        self.size = size
+        self.drive = drive
+        self.app = app
+        self.resp = None
+
+    def run(self):
+        scope = ['https://www.googleapis.com/auth/drive']
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(self.app.root_path, "creds.json"), scope)
+        self.drive = build('drive', 'v3', credentials=credentials)
+        request = upload_file(self.drive, self.name, self.data)
+        if self.size > 262144:
+            try:
+                response = None
+                while response is None:
+                    chunk = request.next_chunk()
+                    if chunk:
+                        status, response = chunk
+                        if status:
+                            self.progress = int(status.progress() * 100)
+            except AttributeError:
+                pass
+        with self.app.app_context():
+            self.resp = redirect('/')
+            self.progress = 101
 
 
 exporting_threads = {}

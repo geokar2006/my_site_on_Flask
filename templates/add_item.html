@@ -12,8 +12,12 @@
             upload = document.getElementById('upload');
             if (chbox.checked) {
                 link.hidden = true;
+                if (filename == null) {
+                    document.getElementById('submit_btn').hidden = true;
+                }
                 upload.hidden = false;
             } else {
+                document.getElementById('submit_btn').hidden = false;
                 link.hidden = false;
                 upload.hidden = true;
             }
@@ -38,11 +42,31 @@
             }
         }
 
-        window.onload = need_checker;
+        var onserver;
+        var filename;
+
+        function checkbyname() {
+            var file = $("#uploaded_file")[0].files[0];
+            filename = file.name;
+            var label = document.getElementById("upload_data");
+            $.ajax({
+                type: 'GET',
+                url: '/check_file_uploaded/' + filename,
+            }).done(function (resp) {
+                onserver = (resp === "True");
+                document.getElementById("OnServer").checked = onserver;
+                if (onserver) {
+                    label.textContent = "Файл наёден на сервере. Загрузка не требуеться"
+                    document.getElementById("submit_btn").hidden = false;
+                } else {
+                    label.textContent = "Файл не наёден на сервере. Требуеться загрузка"
+                    document.getElementById("submit_btn").hidden = false;
+                }
+            });
+        }
     </script>
-    <form action="" method="post" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        <p>
+    <form action="" id="main_form" method="post">
+        <div>
             {{ form.title.label }}<br>
             {{ form.title(class="form-control") }}<br>
             {% for error in form.title.errors %}
@@ -50,8 +74,8 @@
                     {{ error }}
                 </p>
             {% endfor %}
-        </p>
-        <p>
+        </div>
+        <div>
             {{ form.content.label }}<br>
             {{ form.content(class="form-control") }}<br>
             {% for error in form.content.errors %}
@@ -59,13 +83,96 @@
                     {{ error }}
                 </p>
             {% endfor %}
-        </p>
+        </div>
+        {{ form.uploaded(hidden=true, id="OnServer") }}
+        {{ form.uploaded_filename(hidden=true, id="fname") }}
         <p>{{ form.need_upload(id='in_need', onchange="need_checker()") }} {{ form.need_upload.label }}</p>
         <p id='in_file_l'>{{ form.is_file(id='in_file', onchange="file_checker()") }} {{ form.is_file.label }}</p>
         <p id='link'>{{ form.file_link.label }}: {{ form.file_link() }}</p>
-        <p id='upload' hidden={{ form.is_file.data }}>{{ form.uploaded_file() }}</p>
+        <div id='upload' hidden={{ form.is_file.data }}>{{ form.uploaded_file(id='uploaded_file') }}<input type="button"
+                                                                                                           class="btn btn-primary"
+                                                                                                           id="upload_btn"
+                                                                                                           onclick="checkbyname()"
+                                                                                                           value="Проверить"/>
+            <h5 id="upload_data"></h5>
+        </div>
         <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
-        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
-        {{ message }}
+        <div hidden id="p_progress_bar">
+            <progress value="0" max="100" id="uploadprog"></progress>
+            <h5 id="percent">0%</h5>
+            <h5 hidden id="G_server"></h5>
+        </div>
+        <p><input hidden class="btn btn-primary" type="submit" id="submit_btn" value="Создать"/></p>
     </form>
+    <script>
+        $(document).ready(function () {
+            need_checker();
+            $("#uploaded_file").change(function () {
+                onserver = null;
+                filename = null;
+                document.getElementById("upload_data").textContent = "";
+                document.getElementById("submit_btn").hidden = true;
+            });
+            $("#main_form").submit(function (event) {
+                var form = $("form");
+                document.getElementById("p_progress_bar").hidden = false;
+                if (onserver) {
+                    document.getElementById("fname").value = filename;
+                    document.getElementById("uploaded_file").value = null;
+                }
+                var formData = new FormData(form[0]);
+                $.ajax({
+                    url: "#",
+                    type: 'POST',
+                    data: formData,
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = Math.round((evt.loaded * 100) / evt.total);
+                                var progress_bar = $('#uploadprog');
+                                var percents_of_bar = $('#percent');
+                                progress_bar.val(percentComplete);
+                                percents_of_bar.html(percentComplete + "%");
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                }).done(function (data) {
+                    if (!onserver) {
+                        var G_server = document.getElementById("G_server");
+                        G_server.hidden = false;
+                        var timeout = 1000;
+                        var dotnum = 0;
+                        var uploading = function (task_id) {
+                            $.ajax({
+                                type: 'GET',
+                                url: '/progress/' + task_id,
+                            }).done(function (progress) {
+                                console.log(progress);
+                                if (progress == 101) {
+                                    G_server.textContent = "Файл загружен!"
+                                    window.location.href = "/finish_progress/" + task_id;
+                                } else {
+                                    G_server.textContent = "Загрузка файла на сервер" + '...'.slice(0, dotnum)
+                                    dotnum++;
+                                    if (dotnum > 3) {
+                                        dotnum = 0;
+                                    }
+                                    setTimeout(uploading, timeout, task_id);
+                                }
+                            });
+                        }
+                        uploading(data);
+                    } else {
+                        window.location.href = "/"
+                    }
+                });
+                event.preventDefault();
+            });
+        });
+    </script>
 {% endblock %}

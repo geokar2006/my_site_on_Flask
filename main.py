@@ -42,6 +42,12 @@ def remove_message(id, mes_id):
     return redirect(f'/page/{id}', 302)
 
 
+@app.route("/check_file_uploaded/<sec_name>", methods=['GET', 'POST'])
+def file_cheker(sec_name):
+    print(str(check_if_file_exist(drive, sec_name)))
+    return str(check_if_file_exist(drive, sec_name))
+
+
 @app.route("/page/<int:id>/message/<int:mes_id>", methods=['GET', 'POST'])
 def edit_message(id, mes_id):
     db_sess = db_session.create_session()
@@ -67,9 +73,16 @@ def edit_message(id, mes_id):
                 return redirect(f"/page/{id}", 302)
             else:
                 abort(404)
-        return render_template("page.html", items=items, item=item, form=form)
+        return render_template("page.html", items=items, item=item, form=form, title=item.title)
     return redirect(f"/page/{id}", 302)
 
+
+def is_dict(dict, key):
+    try:
+        dict[key]
+        return True
+    except KeyError:
+        return False
 
 @app.route("/page_download", methods=['POST'])
 def page_download():
@@ -84,7 +97,11 @@ def page_download():
                 if i['name'] == name:
                     idd = i['id']
                     type = str(i['mimeType']).split("/")[-1]
-            thread_id = str(random.randint(0, 10000))
+            thread_id = None
+            while True:
+                thread_id = str(random.randint(0, 100000))
+                if not is_dict(exporting_threads, thread_id):
+                    break
             exporting_threads[thread_id] = Downloader(idd, name, type, drive, app, thread_id)
             exporting_threads[thread_id].start()
             return json.dumps({'success': 'true', 'id': int(thread_id)})
@@ -113,10 +130,10 @@ def item_page(id):
                 message.text = form.text.data
                 item.messages.append(message)
                 db_sess.commit()
-                return render_template("page.html", items=items, item=item, form=form)
+                return render_template("page.html", items=items, item=item, form=form, title=item.title)
             else:
                 abort(404)
-    return render_template("page.html", items=items, item=item, form=form)
+    return render_template("page.html", items=items, item=item, form=form, title=item.title)
 
 
 @app.route("/user/<int:id>", methods=['GET', 'POST'])
@@ -143,8 +160,8 @@ def user_page(id):
                 return redirect('/')
             else:
                 abort(404)
-        return render_template("user.html", user=user, form=form)
-    return render_template("user.html", user=user)
+        return render_template("user.html", user=user, form=form, title=user.name)
+    return render_template("user.html", user=user, title=user.name)
 
 
 @app.route("/me", methods=['GET', 'POST'])
@@ -168,7 +185,7 @@ def current_user_page():
             return redirect('/me')
         else:
             abort(404)
-    return render_template("me_user.html", user=user, form=form)
+    return render_template("me_user.html", user=user, form=form, title="Вы")
 
 
 @app.route("/")
@@ -234,8 +251,9 @@ def logout():
 def add_item():
     if current_user.is_admin or current_user.is_approved:
         form = ItemsForm()
-        if form.validate_on_submit():
+        if request.method == "POST":
             db_sess = db_session.create_session()
+            print(form.data)
             db_sess.expire_on_commit = False
             item = Items()
             item.title = form.title.data
@@ -244,19 +262,34 @@ def add_item():
             item.need_upload = form.need_upload.data
             item.is_file = form.is_file.data
             item.is_private = form.is_private.data
-            if form.need_upload.data and form.is_file.data:
-                # f = form.uploaded_file.data
+            if form.need_upload.data and form.is_file.data and not form.uploaded.data:
                 filename = form.uploaded_file.data.filename
                 sfilename = secure_filename(filename)
-                upload_file(drive, sfilename, form.uploaded_file.data.stream)
+                thread_id = None
+                while True:
+                    thread_id = str(random.randint(0, 100000))
+                    if not is_dict(exporting_threads, thread_id):
+                        break
+                exporting_threads[thread_id] = Uploader(sfilename, form.uploaded_file.data.stream.read(),
+                                                        form.uploaded_file.data.stream.tell(), drive, app)
+                exporting_threads[thread_id].start()
+                form.uploaded_file.data.stream.close()
                 item.uploaded_file_secured_name = sfilename
                 item.uploaded_file_name = filename
+                current_user.items.append(item)
+                db_sess.merge(current_user)
+                db_sess.commit()
+                return thread_id
             elif not form.need_upload.data:
                 item.file_link = form.file_link.data
+            elif form.uploaded.data:
+                filename = form.uploaded_filename.data
+                sfilename = secure_filename(filename)
+                item.uploaded_file_secured_name = sfilename
+                item.uploaded_file_name = filename
             current_user.items.append(item)
             db_sess.merge(current_user)
             db_sess.commit()
-            return redirect('/')
         return render_template('add_item.html', title='Добавление записи',
                                form=form)
     else:
@@ -322,9 +355,12 @@ def edit_item(id):
 @login_required
 def item_delete(id):
     db_sess = db_session.create_session()
-    item = db_sess.query(Items).filter(Items.id == id,
-                                       Items.user == current_user
-                                       ).first()
+    if current_user.is_admin:
+        item = db_sess.query(Items).filter(Items.id == id).first()
+    else:
+        item = db_sess.query(Items).filter(Items.id == id,
+                                           Items.user == current_user
+                                           ).first()
     if item:
         file_list = drive.files().list(q=f"'{os.getenv('GAPI_FOLDER_ID')}' in parents", supportsAllDrives=True,
                                        includeItemsFromAllDrives=True).execute()['files']

@@ -17,13 +17,13 @@
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
         <p>
-            <a href="/new_item" class="btn btn-secondary">Добавить запись</a>
+            <a href="/new_item" class="btn btn-secondary">Добавить пост</a>
             <a href="/logout" class="btn btn-danger">Выйти</a>
         </p>
         {% elif current_user.is_authenticated and current_user.is_approved %}
         <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
         <p>
-            <a href="/new_item" class="btn btn-secondary">Добавить запись</a>
+            <a href="/new_item" class="btn btn-secondary">Добавить пост</a>
             <a href="/logout" class="btn btn-danger">Выйти</a>
         </p>
         {% elif current_user.is_authenticated %}
