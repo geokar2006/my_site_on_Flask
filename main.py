@@ -44,7 +44,6 @@ def remove_message(id, mes_id):
 
 @app.route("/check_file_uploaded/<sec_name>", methods=['GET', 'POST'])
 def file_cheker(sec_name):
-    print(str(check_if_file_exist(drive, sec_name)))
     return str(check_if_file_exist(drive, sec_name))
 
 
