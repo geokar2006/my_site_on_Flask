@@ -1,34 +1,36 @@
 from flask_wtf import FlaskForm
+from flask_babel import _
 from wtforms import PasswordField, StringField, TextAreaField, SubmitField, BooleanField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 
 
 class RegisterForm(FlaskForm):
-    email = EmailField('Почта', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-    password_again = PasswordField('Повторите пароль', validators=[DataRequired()])
-    name = StringField('Имя пользователя', validators=[DataRequired()])
-    about = TextAreaField("Немного о себе")
-    submit = SubmitField('Зарегистрироваться')
+    email = EmailField(validators=[DataRequired()])
+    password = PasswordField(validators=[DataRequired()])
+    password_again = PasswordField(validators=[DataRequired()])
+    name = StringField(validators=[DataRequired()])
+    about = TextAreaField()
+    submit = SubmitField()
 
 
 class AdminEditForm(FlaskForm):
-    about = TextAreaField("О себе")
-    is_admin = BooleanField("Администратор")
-    is_approved = BooleanField('Одобрен')
-    submit = SubmitField('Изменить данные')
+    about = TextAreaField()
+    is_admin = BooleanField()
+    is_approved = BooleanField()
+    submit = SubmitField()
 
 
 class MeEditForm(FlaskForm):
-    about = TextAreaField("О вас")
-    password = PasswordField('Пароль')
-    password_again = PasswordField('Повторите пароль')
-    submit = SubmitField('Изменить данные')
+    about = TextAreaField()
+    password = PasswordField()
+    password_again = PasswordField()
+    submit = SubmitField()
 
 
 class LoginForm(FlaskForm):
-    email = EmailField('Почта', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-    remember_me = BooleanField('Запомнить меня')
-    submit = SubmitField('Войти')
+    email = EmailField(validators=[DataRequired()])
+    password = PasswordField(validators=[DataRequired()])
+    remember_me = BooleanField()
+    submit = SubmitField()
+    submit = SubmitField()

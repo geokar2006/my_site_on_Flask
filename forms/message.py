@@ -4,10 +4,10 @@ from wtforms.validators import DataRequired
 
 
 class AddMesageForm(FlaskForm):
-    text = TextAreaField("Текст:", validators=[DataRequired()])
-    submit = SubmitField('Добавить')
+    text = TextAreaField(validators=[DataRequired()])
+    submit = SubmitField()
 
 
 class EditMesageForm(FlaskForm):
-    text = TextAreaField("Изменение комментария:", validators=[DataRequired()])
-    submit = SubmitField('Изменить')
+    text = TextAreaField(validators=[DataRequired()])
+    submit = SubmitField()

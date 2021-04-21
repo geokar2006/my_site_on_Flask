@@ -41,3 +41,4 @@ urllib3==1.26.4
 Werkzeug==1.0.1
 WTForms==2.3.3
 zipp==3.4.1
+flask-babel

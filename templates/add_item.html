@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Добавление записи</h1>
+    <h1>{{_("Добавление записи")}}</h1>
     <script>
         function file_checker() {
             var chbox;
@@ -56,10 +56,10 @@
                 onserver = (resp === "True");
                 document.getElementById("OnServer").checked = onserver;
                 if (onserver) {
-                    label.textContent = "Файл наёден на сервере. Загрузка не требуеться"
-                    document.getElementById("submit_btn").hidden = false;
+                    label.textContent = "{{_("Файл найден на сервере. Загрузка не требуется")}}";
+                        document.getElementById("submit_btn").hidden = false;
                 } else {
-                    label.textContent = "Файл не наёден на сервере. Требуеться загрузка"
+                    label.textContent = '{{_("Файл не найден на сервере. Требуется загрузка")}}';
                     document.getElementById("submit_btn").hidden = false;
                 }
             });
@@ -93,7 +93,7 @@
                                                                                                            class="btn btn-primary"
                                                                                                            id="upload_btn"
                                                                                                            onclick="checkbyname()"
-                                                                                                           value="Проверить"/>
+                                                                                                           value='{{ _("Проверить") }}'/>
             <h5 id="upload_data"></h5>
         </div>
         <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
@@ -102,7 +102,7 @@
             <h5 id="percent">0%</h5>
             <h5 hidden id="G_server"></h5>
         </div>
-        <p><input hidden class="btn btn-primary" type="submit" id="submit_btn" value="Создать"/></p>
+        <p><input hidden class="btn btn-primary" type="submit" id="submit_btn" value="{{_("Создать")}}"/></p>
     </form>
     <script>
         $(document).ready(function () {
@@ -154,10 +154,10 @@
                             }).done(function (progress) {
                                 console.log(progress);
                                 if (progress == 101) {
-                                    G_server.textContent = "Файл загружен!"
+                                    G_server.textContent = '{{_("Файл загружен!")}}'
                                     window.location.href = "/finish_progress/" + task_id;
                                 } else {
-                                    G_server.textContent = "Загрузка файла на сервер" + '...'.slice(0, dotnum)
+                                    G_server.textContent = '{{_("Загрузка файла на сервер")}}' + '...'.slice(0, dotnum)
                                     dotnum++;
                                     if (dotnum > 3) {
                                         dotnum = 0;

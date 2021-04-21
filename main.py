@@ -1,5 +1,6 @@
 import json
 import random
+from flask_babel import Babel, _
 from flask import Flask, render_template, redirect, request, abort
 from dotenv import load_dotenv
 from flask_restful import abort, Api
@@ -21,11 +22,17 @@ load_dotenv()
 app = Flask(__name__)
 api = Api(app)
 
+babel = Babel(app)
 app.config['SECRET_KEY'] = os.getenv('KEY')
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 drive = None
+
+
+@babel.localeselector
+def get_locale():
+    return request.accept_languages.best_match(['ru', 'en'])
 
 
 @app.route("/page/<int:id>/remove_message/<int:mes_id>", methods=['GET', 'POST'])
@@ -61,6 +68,8 @@ def edit_message(id, mes_id):
     if current_user.is_authenticated:
         form = EditMesageForm()
         if request.method == "GET":
+            form.text.label = Label(form.text.id, _("Изменение комментария:"))
+            form.submit.label = Label(form.submit.id, _('Изменить'))
             if form:
                 form.text.data = item.messages[mes_id].text
             else:
@@ -82,6 +91,7 @@ def is_dict(dict, key):
         return True
     except KeyError:
         return False
+
 
 @app.route("/page_download", methods=['POST'])
 def page_download():
@@ -118,6 +128,9 @@ def item_page(id):
         item = db_sess.query(Items).filter((Items.is_private != True) & (Items.id == id)).first()
         items = db_sess.query(Items).filter(Items.is_private != True)
     form = AddMesageForm()
+    if request.method == "GET":
+        form.text.label = Label(form.text.id, _("Текст:"))
+        form.submit.label = Label(form.submit.id, _('Добавить'))
     if request.method == "POST":
         if current_user.is_authenticated and form.validate_on_submit():
             if item:
@@ -144,6 +157,10 @@ def user_page(id):
     if current_user.is_authenticated and current_user.is_admin:
         form = AdminEditForm()
         if request.method == "GET":
+            form.about.label = Label(form.about.id, _("О себе"))
+            form.is_admin.label = Label(form.is_admin.id, _("Администратор"))
+            form.is_approved.label = Label(form.is_approved.id, _('Одобрен'))
+            form.submit.label = Label(form.submit.id, _('Изменить данные'))
             if form:
                 form.is_admin.data = user.is_admin
                 form.is_approved.data = user.is_approved
@@ -171,6 +188,10 @@ def current_user_page():
     user = db_sess.query(User).filter(User.id == meid).first()
     form = MeEditForm()
     if request.method == "GET":
+        form.about.label = Label(form.about.id, _("О вас"))
+        form.password.label = Label(form.password.id, _('Пароль'))
+        form.password_again.label = Label(form.password_again.id, _('Повторите пароль'))
+        form.submit.label = Label(form.submit.id, _('Изменить данные'))
         if form:
             form.about.data = user.about
         else:
@@ -201,16 +222,23 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
+    if request.method == "GET":
+        form.email.label = Label(form.email.id, _('Почта'))
+        form.password.label = Label(form.password.id, _('Пароль'))
+        form.password_again.label = Label(form.password_again.id, _('Повторите пароль'))
+        form.name.label = Label(form.name.id, _('Имя пользователя'))
+        form.about.label = Label(form.about.id, _("Немного о себе"))
+        form.submit.label = Label(form.submit.id, _('Зарегистрироваться'))
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
-            return render_template('register.html', title='Регистрация',
+            return render_template('register.html', title=_('Регистрация'),
                                    form=form,
-                                   message="Пароли не совпадают")
+                                   message=_("Пароли не совпадают"))
         db_sess = db_session.create_session()
         if db_sess.query(User).filter(User.email == form.email.data).first():
-            return render_template('register.html', title='Регистрация',
+            return render_template('register.html', title=_('Регистрация'),
                                    form=form,
-                                   message="Такой пользователь уже есть")
+                                   message=_("Такой пользователь уже есть"))
         user = User(
             name=form.name.data,
             email=form.email.data,
@@ -220,12 +248,17 @@ def register():
         db_sess.add(user)
         db_sess.commit()
         return redirect('/login')
-    return render_template('register.html', title='Регистрация', form=form)
+    return render_template('register.html', title=_('Регистрация'), form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    if request.method == "GET":
+        form.email.label = Label(form.email.id, _('Почта'))
+        form.password.label = Label(form.password.id, _('Пароль'))
+        form.remember_me.label = Label(form.remember_me.id, _('Запомнить меня'))
+        form.submit.label = Label(form.submit.id, _('Войти'))
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
@@ -233,9 +266,9 @@ def login():
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
         return render_template('login.html',
-                               message="Неправильный логин или пароль",
+                               message=_("Неправильный логин или пароль"),
                                form=form)
-    return render_template('login.html', title='Авторизация', form=form)
+    return render_template('login.html', title=_('Авторизация'), form=form)
 
 
 @app.route('/logout')
@@ -250,6 +283,15 @@ def logout():
 def add_item():
     if current_user.is_admin or current_user.is_approved:
         form = ItemsForm()
+        if request.method == "GET":
+            form.title.label = Label(form.title.id, _('Заголовок'))
+            form.content.label = Label(form.content.id, _('Содержание'))
+            form.is_private.label = Label(form.is_private.id, _('Приватное'))
+            form.need_upload.label = Label(form.need_upload.id, _('Нужно загружать файл?'))
+            form.is_file.label = Label(form.is_file.id, _('Файл (поставьте галочку, если хотите прикрепить файл)'))
+            form.file_link.label = Label(form.file_link.id, _('Ссылка'))
+            form.uploaded_file.label = Label(form.uploaded_file.id, _('Файл'))
+            form.submit.label = Label(form.submit.id, _('Создать'))
         if request.method == "POST":
             db_sess = db_session.create_session()
             db_sess.expire_on_commit = False
@@ -288,7 +330,7 @@ def add_item():
             current_user.items.append(item)
             db_sess.merge(current_user)
             db_sess.commit()
-        return render_template('add_item.html', title='Добавление записи',
+        return render_template('add_item.html', title=_('Добавление записи'),
                                form=form)
     else:
         return redirect("/", 302)
@@ -317,10 +359,10 @@ def edit_item(id):
                 form.need_upload.data = item.need_upload
                 form.is_private.data = item.is_private
                 form.is_file.data = item.is_file
-                form.submit.label = Label(form.submit.id, "Изменить")
+                form.submit.label = Label(form.submit.id, _("Изменить"))
             else:
                 abort(404)
-        if form.validate_on_submit():
+        if request.method == "POST":
             db_sess = db_session.create_session()
             item = db_sess.query(Items).filter(Items.id == id,
                                                Items.user == current_user
@@ -328,23 +370,39 @@ def edit_item(id):
             if item:
                 item.title = form.title.data
                 item.content = form.content.data
-                item.is_private = form.is_private.data
+                item.user = current_user
                 item.need_upload = form.need_upload.data
                 item.is_file = form.is_file.data
-                if form.need_upload.data and form.is_file.data:
+                item.is_private = form.is_private.data
+                if form.need_upload.data and form.is_file.data and not form.uploaded.data:
                     filename = form.uploaded_file.data.filename
                     sfilename = secure_filename(filename)
-                    upload_file(drive, sfilename, form.uploaded_file.data.stream)
+                    thread_id = None
+                    while True:
+                        thread_id = str(random.randint(0, 100000))
+                        if not is_dict(exporting_threads, thread_id):
+                            break
+                    exporting_threads[thread_id] = Uploader(sfilename, form.uploaded_file.data.stream.read(),
+                                                            form.uploaded_file.data.stream.tell(), drive, app)
+                    exporting_threads[thread_id].start()
+                    form.uploaded_file.data.stream.close()
                     item.uploaded_file_secured_name = sfilename
                     item.uploaded_file_name = filename
+                    db_sess.commit()
+                    return thread_id
                 elif not form.need_upload.data:
-                    item.file_link = form.file_link
+                    item.file_link = form.file_link.data
+                elif form.uploaded.data:
+                    filename = form.uploaded_filename.data
+                    sfilename = secure_filename(filename)
+                    item.uploaded_file_secured_name = sfilename
+                    item.uploaded_file_name = filename
                 db_sess.commit()
                 return redirect('/')
             else:
                 abort(404)
         return render_template('add_item.html',
-                               title='Редактирование записи',
+                               title=_('Редактирование записи'),
                                form=form
                                )
 

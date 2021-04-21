@@ -3,10 +3,10 @@
 {% block content %}
     <h1>{{ item.title }}</h1>
     <div class="col-md6 border rounded">
-        <h3>Автор - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, Дата написания -
+        <h3>{{_("Автор")}} - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, {{_("Дата написания")}} -
             {{ item.created_date }}</h3>
         <p>
-        <h4>Текст:</h4>
+        <h4>{{_("Текст:")}}</h4>
         <div style="white-space: pre-line">
             <h3>{{ item.content }}</h3>
         </div>
@@ -17,8 +17,8 @@
                     {% if item.is_file %}
                         <form action="" id="downform" method="post">
                             <p>
-                            <h5 id="dwn_txt">Файл:</h5>
-                            <input class="btn btn-primary" type="submit" id="dwn_btn" value="Скачать"/>
+                            <h5 id="dwn_txt">{{_("Файл:")}}</h5>
+                            <input class="btn btn-primary" type="submit" id="dwn_btn" value='{{ _("Скачать") }}'/>
                             <progress value="0" max="100" hidden=true id="downprog"></progress>
                             <h5 id="percent" hidden=true>0%</h5>
                             </p>
@@ -51,7 +51,7 @@
                                         url: '/progress/' + task_id,
                                     }).done(function (progress) {
                                         if (progress < 101) {
-                                            document.getElementById("dwn_txt").textContent = "Загрузка" + '...'.slice(0, dotnum)
+                                            document.getElementById("dwn_txt").textContent = '{{_("Загрузка")}}' + '...'.slice(0, dotnum)
                                             dotnum++;
                                             if (dotnum > 3) {
                                                 dotnum = 0;
@@ -65,7 +65,7 @@
                                             progress_bar.hidden = true;
                                             percent.hidden = true;
                                             document.getElementById("dwn_btn").hidden = false;
-                                            document.getElementById("dwn_txt").textContent = "Файл:";
+                                            document.getElementById("dwn_txt").textContent = '{{_("Файл:")}}';
                                             document.getElementById("downform").reset();
                                             id = undefined;
                                         }
@@ -79,23 +79,10 @@
                                 $("#downform").submit(function (event) {
                                     if (!checkbyname()) {
                                         var percent = document.getElementById("percent");
-                                        percent.textContent = "Запрашиваемый файл не найден на сервере";
+                                        percent.textContent = '{{_("Запрашиваемый файл не найден на сервере")}}';
                                         percent.hidden = false;
                                     } else {
-                                        var timeout = 1000;
                                         sendAjaxForm("downform", '{{ item.uploaded_file_secured_name }}');
-                                        var wait = function () {
-                                            if (id == undefined) {
-                                                setTimeout(wait, timeout);
-                                            } else {
-                                                if (id !== -1) {
-                                                    check_progress(id);
-                                                }
-                                            }
-                                        }
-                                        if (id == undefined) {
-                                            wait();
-                                        }
                                     }
                                     event.preventDefault();
 
@@ -107,6 +94,7 @@
                                 $.ajax({
                                     data: {filename: msg},
                                     type: 'POST',
+                                    async: false,
                                     url: '/page_download',
                                 }).done(function (response) {
                                     var json = jQuery.parseJSON(response);
@@ -116,16 +104,17 @@
                                         id = -1;
                                     }
                                 });
+                                check_progress(id);
                             }
                         </script>
                     {% else %}
                         <p>
-                        <h5>Ссылка:</h5>
-                        <a class="btn btn-primary" href="{{ item.file_link }}">Перейти</a>
+                        <h5>{{_("Ссылка:")}}</h5>
+                        <a class="btn btn-primary" href="{{ item.file_link }}">{{_("Перейти")}}</a>
                         </p>
                     {% endif %}
                 {% else %}
-                    <h4>Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу</h4>
+                    <h4>{{_("Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу")}}</h4>
                 {% endif %}
             </div>
             </p>
@@ -133,7 +122,7 @@
     </div>
 
     <div class="col-md6 border rounded">
-        <h3>Комментарии:</h3>
+        <h3>{{_("Комментарии:")}}</h3>
         {% if current_user.is_authenticated %}
             <form action="" method="post">
                 {{ form.hidden_tag() }}
@@ -144,21 +133,21 @@
                 <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
             </form>
         {% else %}
-            <h4>Войдите или зарегестрируйтесть для того чтобы оставить комментарий</h4>
+            <h4>{{_("Войдите или зарегестрируйтесть для того, чтобы оставить комментарий")}}</h4>
         {% endif %}
         {% for comment in item.messages %}
             <div class="col-md6 border rounded">
-                <h4>Комментраий пользователя "{{ comment.user_name }}":</h4>
+                <h4>{{_("Комментарий пользователя:")}} "{{ comment.user_name }}":</h4>
                 <div style="white-space: pre-line">
                     <h5>{{ comment.text }}</h5>
                 </div>
                 {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.is_admin) %}
                     <div
                     ><a href="/page/{{ item.id }}/message/{{ loop.index0 }}" class="btn btn-warning">
-                        Изменить
+                        {{_("Изменить")}}
                     </a>
                         <a href="/page/{{ item.id }}/remove_message/{{ comment.id }}" class="btn btn-danger">
-                            Удалить
+                            {{_("Удалить")}}
                         </a>
                     </div>
                 {% endif %}

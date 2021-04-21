@@ -3,12 +3,13 @@
 {% block content %}
 <form action="" method="post" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
-    <h1>Вы: {{ user.name }}, Одобрены: {% if user.is_approved %}Да {% else %}Нет {% endif %}, Админ: {% if
-        user.is_admin %}Да {% else %}Нет {% endif %}</h1>
+    <h1>{{_("Вы:")}} {{ user.name }}, {{_("Одобрены:")}} {% if user.is_approved %}{{_("Да")}} {% else %}{{_("Нет")}} {% endif %},
+        {{_("Админ:")}} {% if
+        user.is_admin %}{{_("Да")}} {% else %}{{_("Нет")}} {% endif %}</h1>
     <p>
-    <h3>Ваша дата регистрации: {{ user.created_date }}</h3>
+    <h3>{{_("Ваша дата регистрации:")}} {{ user.created_date }}</h3>
     <p>
-    <h2>О вас:</h2><br>
+    <h2>{{_("О вас:")}}</h2><br>
     {{ form.about(class="form-control") }}<br>
     {% for error in form.about.errors %}
     <p class="alert alert-danger" role="alert">
@@ -17,11 +18,11 @@
     {% endfor %}
     </p>
     <br>
-    <h2>Ваша почта:</h2>
+    <h2>{{_("Ваша почта:")}}</h2>
     <h3>{{ user.email }}</h3>
     <br>
     <p>
-    <h2>Смена пароля:</h2>
+    <h2>{{_("Смена пароля:")}}</h2>
     <p>
         {{ form.password.label }}<br>
         {{ form.password(class="form-control", type="password") }}<br>

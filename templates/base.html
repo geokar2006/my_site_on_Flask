@@ -13,26 +13,20 @@
 <body>
 <header>
     <nav class="navbar navbar-light bg-light">
-        <a class="navbar-brand" href="/">Кэши для игр</a>
-        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a class="navbar-brand" href="/">{{_("Кэши для игр")}}</a>
+        {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_approved) %}
         <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
         <p>
-            <a href="/new_item" class="btn btn-secondary">Добавить пост</a>
-            <a href="/logout" class="btn btn-danger">Выйти</a>
-        </p>
-        {% elif current_user.is_authenticated and current_user.is_approved %}
-        <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
-        <p>
-            <a href="/new_item" class="btn btn-secondary">Добавить пост</a>
-            <a href="/logout" class="btn btn-danger">Выйти</a>
+            <a href="/new_item" class="btn btn-secondary">{{_("Добавить запись")}}</a>
+            <a href="/logout" class="btn btn-danger">{{_("Выйти")}}</a>
         </p>
         {% elif current_user.is_authenticated %}
         <a class="navbar-brand" href="/user/{{ current_user.id }}">{{ current_user.name }}</a>
-        <a href="/logout" class="btn btn-danger">Выйти</a>
+        <a href="/logout" class="btn btn-danger">{{_("Выйти")}}</a>
         {% else %}
         <p>
-            <a class="btn btn-primary " href="/register">Зарегистрироваться</a>
-            <a class="btn btn-success" href="/login">Войти</a>
+            <a class="btn btn-primary " href="/register">{{_("Зарегистрироваться")}}</a>
+            <a class="btn btn-success" href="/login">{{_("Войти")}}</a>
         </p>
         {% endif %}
     </nav>
