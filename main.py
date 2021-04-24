@@ -370,7 +370,6 @@ def edit_item(id):
             if item:
                 item.title = form.title.data
                 item.content = form.content.data
-                item.user = current_user
                 item.need_upload = form.need_upload.data
                 item.is_file = form.is_file.data
                 item.is_private = form.is_private.data
