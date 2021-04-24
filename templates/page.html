@@ -3,10 +3,11 @@
 {% block content %}
     <h1>{{ item.title }}</h1>
     <div class="col-md6 border rounded">
-        <h3>{{_("Автор")}} - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, {{_("Дата написания")}} -
+        <h3>{{ _("Автор") }} - <a class="navbar-brand"
+                                  href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, {{ _("Дата написания") }} -
             {{ item.created_date }}</h3>
         <p>
-        <h4>{{_("Текст:")}}</h4>
+        <h4>{{ _("Текст:") }}</h4>
         <div style="white-space: pre-line">
             <h3>{{ item.content }}</h3>
         </div>
@@ -17,7 +18,7 @@
                     {% if item.is_file %}
                         <form action="" id="downform" method="post">
                             <p>
-                            <h5 id="dwn_txt">{{_("Файл:")}}</h5>
+                            <h5 id="dwn_txt">{{ _("Файл:") }}</h5>
                             <input class="btn btn-primary" type="submit" id="dwn_btn" value='{{ _("Скачать") }}'/>
                             <progress value="0" max="100" hidden=true id="downprog"></progress>
                             <h5 id="percent" hidden=true>0%</h5>
@@ -87,8 +88,7 @@
                                     event.preventDefault();
 
                                 });
-                            })
-                            ;
+                            });
 
                             function sendAjaxForm(form_ajax, msg) {
                                 $.ajax({
@@ -109,12 +109,12 @@
                         </script>
                     {% else %}
                         <p>
-                        <h5>{{_("Ссылка:")}}</h5>
-                        <a class="btn btn-primary" href="{{ item.file_link }}">{{_("Перейти")}}</a>
+                        <h5>{{ _("Ссылка:") }}</h5>
+                        <a class="btn btn-primary" href="{{ item.file_link }}">{{ _("Перейти") }}</a>
                         </p>
                     {% endif %}
                 {% else %}
-                    <h4>{{_("Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу")}}</h4>
+                    <h4>{{ _("Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу") }}</h4>
                 {% endif %}
             </div>
             </p>
@@ -122,7 +122,7 @@
     </div>
 
     <div class="col-md6 border rounded">
-        <h3>{{_("Комментарии:")}}</h3>
+        <h3>{{ _("Комментарии:") }}</h3>
         {% if current_user.is_authenticated %}
             <form action="" method="post">
                 {{ form.hidden_tag() }}
@@ -133,21 +133,21 @@
                 <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
             </form>
         {% else %}
-            <h4>{{_("Войдите или зарегестрируйтесть для того, чтобы оставить комментарий")}}</h4>
+            <h4>{{ _("Войдите или зарегестрируйтесть для того, чтобы оставить комментарий") }}</h4>
         {% endif %}
         {% for comment in item.messages %}
             <div class="col-md6 border rounded">
-                <h4>{{_("Комментарий пользователя:")}} "{{ comment.user_name }}":</h4>
+                <h4>{{ _("Комментарий пользователя:") }} "{{ comment.user_name }}":</h4>
                 <div style="white-space: pre-line">
                     <h5>{{ comment.text }}</h5>
                 </div>
                 {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.is_admin) %}
                     <div
                     ><a href="/page/{{ item.id }}/message/{{ loop.index0 }}" class="btn btn-warning">
-                        {{_("Изменить")}}
+                        {{ _("Изменить") }}
                     </a>
                         <a href="/page/{{ item.id }}/remove_message/{{ comment.id }}" class="btn btn-danger">
-                            {{_("Удалить")}}
+                            {{ _("Удалить") }}
                         </a>
                     </div>
                 {% endif %}

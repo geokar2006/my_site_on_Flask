@@ -3,6 +3,7 @@
 {% block content %}
     <h1>{{_("Добавление записи")}}</h1>
     <script>
+        var is_link = true;
         function file_checker() {
             var chbox;
             var link;
@@ -11,12 +12,14 @@
             link = document.getElementById('link');
             upload = document.getElementById('upload');
             if (chbox.checked) {
+                is_link = false;
                 link.hidden = true;
                 if (filename == null) {
                     document.getElementById('submit_btn').hidden = true;
                 }
                 upload.hidden = false;
             } else {
+                is_link = true;
                 document.getElementById('submit_btn').hidden = false;
                 link.hidden = false;
                 upload.hidden = true;
@@ -102,7 +105,7 @@
             <h5 id="percent">0%</h5>
             <h5 hidden id="G_server"></h5>
         </div>
-        <p><input hidden class="btn btn-primary" type="submit" id="submit_btn" value="{{_("Создать")}}"/></p>
+        <p><input class="btn btn-primary" type="submit" id="submit_btn" value="{{_("Создать")}}"/></p>
     </form>
     <script>
         $(document).ready(function () {
@@ -142,7 +145,7 @@
                     contentType: false,
                     processData: false
                 }).done(function (data) {
-                    if (!onserver) {
+                    if (!onserver && !is_link) {
                         var G_server = document.getElementById("G_server");
                         G_server.hidden = false;
                         var timeout = 1000;

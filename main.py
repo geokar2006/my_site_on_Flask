@@ -1,7 +1,7 @@
 import json
 import random
 from flask_babel import Babel, _
-from flask import Flask, render_template, redirect, request, abort
+from flask import Flask, render_template, redirect, request, abort, jsonify
 from dotenv import load_dotenv
 from flask_restful import abort, Api
 from werkzeug.utils import secure_filename
@@ -322,7 +322,7 @@ def add_item():
                 return thread_id
             elif not form.need_upload.data:
                 item.file_link = form.file_link.data
-            elif form.uploaded.data:
+            elif form.need_upload.data and not form.is_file.data:
                 filename = form.uploaded_filename.data
                 sfilename = secure_filename(filename)
                 item.uploaded_file_secured_name = sfilename
@@ -370,7 +370,6 @@ def edit_item(id):
             if item:
                 item.title = form.title.data
                 item.content = form.content.data
-                item.user = current_user
                 item.need_upload = form.need_upload.data
                 item.is_file = form.is_file.data
                 item.is_private = form.is_private.data
@@ -390,7 +389,7 @@ def edit_item(id):
                     item.uploaded_file_name = filename
                     db_sess.commit()
                     return thread_id
-                elif not form.need_upload.data:
+                elif form.need_upload.data and not form.is_file.data:
                     item.file_link = form.file_link.data
                 elif form.uploaded.data:
                     filename = form.uploaded_filename.data
