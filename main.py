@@ -359,6 +359,7 @@ def edit_item(id):
                 form.need_upload.data = item.need_upload
                 form.is_private.data = item.is_private
                 form.is_file.data = item.is_file
+                form.file_link.data = item.file_link
                 form.title.label = Label(form.title.id, _('Заголовок'))
                 form.content.label = Label(form.content.id, _('Содержание'))
                 form.is_private.label = Label(form.is_private.id, _('Приватное'))
