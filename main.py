@@ -359,6 +359,13 @@ def edit_item(id):
                 form.need_upload.data = item.need_upload
                 form.is_private.data = item.is_private
                 form.is_file.data = item.is_file
+                form.title.label = Label(form.title.id, _('Заголовок'))
+                form.content.label = Label(form.content.id, _('Содержание'))
+                form.is_private.label = Label(form.is_private.id, _('Приватное'))
+                form.need_upload.label = Label(form.need_upload.id, _('Нужно загружать файл?'))
+                form.is_file.label = Label(form.is_file.id, _('Файл (поставьте галочку, если хотите прикрепить файл)'))
+                form.file_link.label = Label(form.file_link.id, _('Ссылка'))
+                form.uploaded_file.label = Label(form.uploaded_file.id, _('Файл'))
                 form.submit.label = Label(form.submit.id, _("Изменить"))
             else:
                 abort(404)
