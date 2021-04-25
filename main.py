@@ -320,9 +320,9 @@ def add_item():
                 db_sess.merge(current_user)
                 db_sess.commit()
                 return thread_id
-            elif not form.need_upload.data:
-                item.file_link = form.file_link.data
             elif form.need_upload.data and not form.is_file.data:
+                item.file_link = form.file_link.data
+            elif form.need_upload.data:
                 filename = form.uploaded_filename.data
                 sfilename = secure_filename(filename)
                 item.uploaded_file_secured_name = sfilename
