@@ -479,6 +479,8 @@ def adminka():
 def debugmes():
     db_sess = db_session.create_session()
     settings = db_sess.query(site_settings).filter(site_settings.id == 1).first()
+    if not settings.debug_mode:
+        abort(404)
     return render_template("debug.html", settings=settings, title=_("Ведуться технические работы"))
 
 
