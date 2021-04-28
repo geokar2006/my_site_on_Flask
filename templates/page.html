@@ -17,12 +17,12 @@
                 {% if current_user.is_authenticated %}
                     {% if item.is_file %}
                         <form action="" id="downform" method="post">
-                            <p>
+                            <div>
                             <h5 id="dwn_txt">{{ _("Файл:") }}</h5>
                             <input class="btn btn-primary" type="submit" id="dwn_btn" value='{{ _("Скачать") }}'/>
                             <progress value="0" max="100" hidden=true id="downprog"></progress>
                             <h5 id="percent" hidden=true>0%</h5>
-                            </p>
+                            </div>
                         </form>
                         <script>
                             function checkbyname() {
@@ -108,16 +108,15 @@
                             }
                         </script>
                     {% else %}
-                        <p>
+                        <div>
                         <h5>{{ _("Ссылка:") }}</h5>
                         <a class="btn btn-primary" href="{{ item.file_link }}">{{ _("Перейти") }}</a>
-                        </p>
+                        </div>
                     {% endif %}
                 {% else %}
                     <h4>{{ _("Войдите или зарегистрируйтесь для получения доступа к ссылке или файлу") }}</h4>
                 {% endif %}
             </div>
-            </p>
         {% endif %}
     </div>
 
@@ -137,7 +136,7 @@
         {% endif %}
         {% for comment in item.messages %}
             <div class="col-md6 border rounded">
-                <h4>{{ _("Комментарий пользователя:") }} "<a class="navbar-brand" href="/user/{{ comment.user_id }}">{{ comment.user_name }}</a>":</h4>
+                <h4>{{ _("Комментарий пользователя:") }} <a class="navbar-brand" href="/user/{{ comment.user_id }}">{{ comment.user_name }}</a></h4>
                 <div style="white-space: pre-line">
                     <h5>{{ comment.text }}</h5>
                 </div>
