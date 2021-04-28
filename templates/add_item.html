@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>{{_("Добавление записи")}}</h1>
+    <h1>{{ _("Добавление записи") }}</h1>
     <script>
         var is_link = true;
+
         function file_checker() {
             var chbox;
             var link;
@@ -60,7 +61,7 @@
                 document.getElementById("OnServer").checked = onserver;
                 if (onserver) {
                     label.textContent = "{{_("Файл найден на сервере. Загрузка не требуется")}}";
-                        document.getElementById("submit_btn").hidden = false;
+                    document.getElementById("submit_btn").hidden = false;
                 } else {
                     label.textContent = '{{_("Файл не найден на сервере. Требуется загрузка")}}';
                     document.getElementById("submit_btn").hidden = false;
@@ -105,7 +106,7 @@
             <h5 id="percent">0%</h5>
             <h5 hidden id="G_server"></h5>
         </div>
-        <p><input class="btn btn-primary" type="submit" id="submit_btn" value="{{_("Создать")}}"/></p>
+        <p><input class="btn btn-primary" type="submit" id="submit_btn" value="{{ _("Создать") }}"/></p>
     </form>
     <script>
         $(document).ready(function () {

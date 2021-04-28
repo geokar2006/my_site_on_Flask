@@ -25,6 +25,10 @@
                             </div>
                         </form>
                         <script>
+                            $("#downform").submit(function (e) {
+                                e.preventDefault();
+                                document.getElementById("dwn_btn").disabled = true;
+                            })
                             function checkbyname() {
                                 var filename = '{{ item.uploaded_file_secured_name }}';
                                 var res;
@@ -106,6 +110,10 @@
                                 });
                                 check_progress(id);
                             }
+                            $("#comment_form").submit(function (e) {
+                                e.preventDefault();
+                                document.getElementById("comment_btn").disabled = true;
+                            })
                         </script>
                     {% else %}
                         <div>
@@ -123,13 +131,13 @@
     <div class="col-md6 border rounded">
         <h3>{{ _("Комментарии:") }}</h3>
         {% if current_user.is_authenticated %}
-            <form action="" method="post">
+            <form action="" method="post" id="comment_form">
                 {{ form.hidden_tag() }}
                 <p>
                     {{ form.text.label }}<br>
                     {{ form.text(class="form-control") }}<br>
                 </p>
-                <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+                <p>{{ form.submit(type="submit", class="btn btn-primary", id="comment_btn") }}</p>
             </form>
         {% else %}
             <h4>{{ _("Войдите или зарегестрируйтесть для того, чтобы оставить комментарий") }}</h4>

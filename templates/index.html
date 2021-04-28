@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{_("Записи")}}</h1>
-{% for item in items%}
-<div class="col-md6 border rounded">
-    <h2><a href="/page/{{ item.id }}">{{item.title}}</a></h2>
-    <div>
-        {{_("Автор")}} - <a class="navbar-brand" href="/user/{{ item.user.id }}">{{item.user.name}}</a>, {{_("Дата написания")}} - {{item.created_date}}
-    </div>
-    {% if current_user.is_authenticated and (current_user == item.user or current_user.is_admin) %}
-    <div>
-        <a href="/item/{{ item.id }}" class="btn btn-warning">
-            {{_("Изменить")}}
-        </a>
-        <a href="/item_delete/{{ item.id }}" class="btn btn-danger">
-            {{_("Удалить")}}
-        </a>
-    </div>
-{% endif %}
-</div>
-{% endfor %}
+    <h1>{{ _("Записи") }}</h1>
+    {% for item in items %}
+        <div class="col-md6 border rounded">
+            <h2><a href="/page/{{ item.id }}">{{ item.title }}</a></h2>
+            <div>
+                {{ _("Автор") }} - <a class="navbar-brand"
+                                      href="/user/{{ item.user.id }}">{{ item.user.name }}</a>, {{ _("Дата написания") }}
+                - {{ item.created_date }}
+            </div>
+            {% if current_user.is_authenticated and (current_user == item.user or current_user.is_admin) %}
+                <div>
+                    <a href="/item/{{ item.id }}" class="btn btn-warning">
+                        {{ _("Изменить") }}
+                    </a>
+                    <a href="/item_delete/{{ item.id }}" class="btn btn-danger">
+                        {{ _("Удалить") }}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
 {% endblock %}

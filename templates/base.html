@@ -8,26 +8,26 @@
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
           crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <title>{{title}}</title>
+    <title>{{ title }}</title>
 </head>
 <body>
 <header>
     <nav class="navbar navbar-light bg-light">
-        <a class="navbar-brand" href="/">{{_("Кэши для игр")}}</a>
+        <a class="navbar-brand" href="/">{{ _("Кэши для игр") }}</a>
         {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_approved) %}
-        <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
-        <p>
-            <a href="/new_item" class="btn btn-secondary">{{_("Добавить запись")}}</a>
-            <a href="/logout" class="btn btn-danger">{{_("Выйти")}}</a>
-        </p>
+            <a class="navbar-brand" href="/me">{{ current_user.name }}</a>
+            <p>
+                <a href="/new_item" class="btn btn-secondary">{{ _("Добавить запись") }}</a>
+                <a href="/logout" class="btn btn-danger">{{ _("Выйти") }}</a>
+            </p>
         {% elif current_user.is_authenticated %}
-        <a class="navbar-brand" href="/user/{{ current_user.id }}">{{ current_user.name }}</a>
-        <a href="/logout" class="btn btn-danger">{{_("Выйти")}}</a>
+            <a class="navbar-brand" href="/user/{{ current_user.id }}">{{ current_user.name }}</a>
+            <a href="/logout" class="btn btn-danger">{{ _("Выйти") }}</a>
         {% else %}
-        <p>
-            <a class="btn btn-primary " href="/register">{{_("Зарегистрироваться")}}</a>
-            <a class="btn btn-success" href="/login">{{_("Войти")}}</a>
-        </p>
+            <p>
+                <a class="btn btn-primary " href="/register">{{ _("Зарегистрироваться") }}</a>
+                <a class="btn btn-success" href="/login">{{ _("Войти") }}</a>
+            </p>
         {% endif %}
     </nav>
 </header>
