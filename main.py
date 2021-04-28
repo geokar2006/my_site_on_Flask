@@ -409,7 +409,6 @@ def edit_item(id):
                 return redirect('/')
             else:
                 abort(404)
-        form.translate()
         return render_template('add_item.html',
                                title=_('Редактирование записи'),
                                form=form
