@@ -18,17 +18,13 @@
                     {% if item.is_file %}
                         <form action="" id="downform" method="post">
                             <div>
-                            <h5 id="dwn_txt">{{ _("Файл:") }}</h5>
-                            <input class="btn btn-primary" type="submit" id="dwn_btn" value='{{ _("Скачать") }}'/>
-                            <progress value="0" max="100" hidden=true id="downprog"></progress>
-                            <h5 id="percent" hidden=true>0%</h5>
+                                <h5 id="dwn_txt">{{ _("Файл:") }}</h5>
+                                <input class="btn btn-primary" type="submit" id="dwn_btn" value='{{ _("Скачать") }}'/>
+                                <progress value="0" max="100" hidden=true id="downprog"></progress>
+                                <h5 id="percent" hidden=true>0%</h5>
                             </div>
                         </form>
                         <script>
-                            $("#downform").submit(function (e) {
-                                e.preventDefault();
-                                document.getElementById("dwn_btn").disabled = true;
-                            })
                             function checkbyname() {
                                 var filename = '{{ item.uploaded_file_secured_name }}';
                                 var res;
@@ -72,6 +68,7 @@
                                             document.getElementById("dwn_btn").hidden = false;
                                             document.getElementById("dwn_txt").textContent = '{{_("Файл:")}}';
                                             document.getElementById("downform").reset();
+                                            document.getElementById("dwn_btn").disabled = false;
                                             id = undefined;
                                         }
                                     });
@@ -82,6 +79,7 @@
                             var id = undefined;
                             $(document).ready(function () {
                                 $("#downform").submit(function (event) {
+                                    document.getElementById("dwn_btn").disabled = true;
                                     if (!checkbyname()) {
                                         var percent = document.getElementById("percent");
                                         percent.textContent = '{{_("Запрашиваемый файл не найден на сервере")}}';
@@ -90,7 +88,6 @@
                                         sendAjaxForm("downform", '{{ item.uploaded_file_secured_name }}');
                                     }
                                     event.preventDefault();
-
                                 });
                             });
 
@@ -110,15 +107,11 @@
                                 });
                                 check_progress(id);
                             }
-                            $("#comment_form").submit(function (e) {
-                                e.preventDefault();
-                                document.getElementById("comment_btn").disabled = true;
-                            })
                         </script>
                     {% else %}
                         <div>
-                        <h5>{{ _("Ссылка:") }}</h5>
-                        <a class="btn btn-primary" href="{{ item.file_link }}">{{ _("Перейти") }}</a>
+                            <h5>{{ _("Ссылка:") }}</h5>
+                            <a class="btn btn-primary" href="{{ item.file_link }}">{{ _("Перейти") }}</a>
                         </div>
                     {% endif %}
                 {% else %}
@@ -139,12 +132,19 @@
                 </p>
                 <p>{{ form.submit(type="submit", class="btn btn-primary", id="comment_btn") }}</p>
             </form>
+            <script>
+                $("#comment_form").submit(function (e) {
+                    document.getElementById("comment_btn").disabled = true;
+                })
+            </script>
         {% else %}
             <h4>{{ _("Войдите или зарегестрируйтесть для того, чтобы оставить комментарий") }}</h4>
         {% endif %}
         {% for comment in item.messages %}
             <div class="col-md6 border rounded">
-                <h4>{{ _("Комментарий пользователя:") }} <a class="navbar-brand" href="/user/{{ comment.user_id }}">{{ comment.user_name }}</a></h4>
+                <h4>{{ _("Комментарий пользователя:") }} <a class="navbar-brand"
+                                                            href="/user/{{ comment.user_id }}">{{ comment.user_name }}</a>
+                </h4>
                 <div style="white-space: pre-line">
                     <h5>{{ comment.text }}</h5>
                 </div>
