@@ -14,7 +14,7 @@ class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
-    user_name = sqlalchemy.Column(sqlalchemy.String, autoincrement=True)
+    user_name = sqlalchemy.Column(sqlalchemy.String(length=100), autoincrement=True)
 
     user_id = sqlalchemy.Column(sqlalchemy.Integer, autoincrement=True)
 
@@ -22,7 +22,7 @@ class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
                                 sqlalchemy.ForeignKey("items.id"))
     item = orm.relation('Items')
 
-    text = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    text = sqlalchemy.Column(sqlalchemy.String(length=1000), nullable=True)
 
     created_date = sqlalchemy.Column(sqlalchemy.DateTime,
                                      default=datetime.datetime.now)

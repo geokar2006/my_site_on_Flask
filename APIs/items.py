@@ -7,8 +7,8 @@ from APIs.RestfulProtect import *
 
 def abort_if_item_not_found(id):
     session = db_session.create_session()
-    news = session.query(Items).get(id)
-    if not news:
+    items = session.query(Items).get(id)
+    if not items:
         abort(404, message=f"Item {id} not found")
 
 
@@ -46,9 +46,9 @@ class ItemsListResource(Resource):
     @api_auth.login_required
     def get(self):
         session = db_session.create_session()
-        news = session.query(Items).all()
-        return jsonify({'news': [item.to_dict(
-            only=('title', 'content', 'user.name')) for item in news]})
+        items = session.query(Items).all()
+        return jsonify({'items': [item.to_dict(
+            only=('title', 'content', 'user.name')) for item in items]})
 
     @api_auth.login_required
     def post(self):

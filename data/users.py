@@ -13,11 +13,11 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
-    name = sqlalchemy.Column(sqlalchemy.String, nullable=True, unique=True)
-    about = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    email = sqlalchemy.Column(sqlalchemy.String,
+    name = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=True, unique=True)
+    about = sqlalchemy.Column(sqlalchemy.String(length=1000), nullable=True)
+    email = sqlalchemy.Column(sqlalchemy.String(length=100),
                               index=True, unique=True, nullable=True)
-    hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    hashed_password = sqlalchemy.Column(sqlalchemy.String(length=2000), nullable=True)
     created_date = sqlalchemy.Column(sqlalchemy.DateTime,
                                      default=datetime.datetime.now)
     items = orm.relation("Items", back_populates='user', lazy='subquery')

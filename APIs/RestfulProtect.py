@@ -10,7 +10,7 @@ api_auth = HTTPBasicAuth()
 def verify_password(username, paswd):
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.name == username).first()
-    if user.is_admin and user.check_password(paswd):
+    if user and user.is_admin and user.check_password(paswd):
         return username
     return None
 

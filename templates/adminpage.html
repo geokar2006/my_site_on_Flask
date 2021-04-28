@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ _("Админ-панель") }}</h1>
+    <form id="main_form" method="post">
+        {{ form.debug_mode(id='debug_btn') }} {{ form.debug_mode.label }}
+        <div hidden id='debug_message'>
+            {{ form.message.label }}<br>
+            {{ form.message(class="form-control") }}<br>
+            {% for error in form.message.errors %}
+                <p class="alert alert-danger" role="alert">
+                    {{ error }}
+                </p>
+            {% endfor %}
+        </div>
+        <p hidden id='redirect_link'>{{ form.redirect_link() }} {{ form.redirect_link.label }}</p>
+        <p id='submit'>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    </form>
+    <script>
+        var debug_mode;
+
+        function jinj2bool(txt) {
+            return (txt === "True")
+        }
+
+        $(function () {
+            debug_mode = jinj2bool("{{form.debug_mode.data}}");
+            if (debug_mode) {
+                document.getElementById('debug_message').hidden = false;
+                document.getElementById('redirect_link').hidden = false;
+            }
+            $("#debug_btn").on("change", function () {
+                debug_mode = document.getElementById('debug_btn').checked;
+                if (debug_mode) {
+                    document.getElementById('debug_message').hidden = false;
+                    document.getElementById('redirect_link').hidden = false;
+                } else {
+                    document.getElementById('debug_message').hidden = true;
+                    document.getElementById('redirect_link').hidden = true;
+                }
+            })
+        })
+    </script>
+{% endblock %}

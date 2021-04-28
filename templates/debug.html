@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        .main {
+            position: relative;
+        }
+    </style>
+    <div class="main">
+        <h1 style="text-align:center;">{{ _("Ведуться технические работы") }}</h1>
+        <div style="white-space: pre-line; text-align:center;"><h1>{{ settings.debug_message }}</h1></div>
+        <p style="text-align:center;"><a href="{{ settings.debug_redirect_page }}"  class="btn btn-primary">{{_("Перейти")}}</a></p>
+    </div>
+{% endblock %}

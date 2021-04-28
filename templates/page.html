@@ -137,7 +137,7 @@
         {% endif %}
         {% for comment in item.messages %}
             <div class="col-md6 border rounded">
-                <h4>{{ _("Комментарий пользователя:") }} "{{ comment.user_name }}":</h4>
+                <h4>{{ _("Комментарий пользователя:") }} "<a class="navbar-brand" href="/user/{{ comment.user_id }}">{{ comment.user_name }}</a>":</h4>
                 <div style="white-space: pre-line">
                     <h5>{{ comment.text }}</h5>
                 </div>

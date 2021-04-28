@@ -12,8 +12,8 @@ class Items(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
-    title = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    content = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    title = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=True)
+    content = sqlalchemy.Column(sqlalchemy.String(length=10000), nullable=True)
     created_date = sqlalchemy.Column(sqlalchemy.DateTime,
                                      default=datetime.datetime.now)
     is_private = sqlalchemy.Column(sqlalchemy.Boolean, default=True)
@@ -26,10 +26,10 @@ class Items(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     is_file = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
 
-    file_link = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    file_link = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=True)
 
-    uploaded_file_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    uploaded_file_name = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=True)
 
-    uploaded_file_secured_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    uploaded_file_secured_name = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=True)
 
     messages = orm.relation("Message", back_populates='item', lazy='subquery')

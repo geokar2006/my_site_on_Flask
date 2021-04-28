@@ -11,7 +11,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from data import db_session
 from data.items import Items
-from main import app
 
 cerd = None
 

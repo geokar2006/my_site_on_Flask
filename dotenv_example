@@ -1,3 +1,4 @@
 KEY=your secret key
 GAPI_FOLDER_ID=id of google drive folder
 DRIVE_ID=id of your or team drive (root - your drive)
+//you can get infinity shared drive here - https://www.pon.workers.dev/
