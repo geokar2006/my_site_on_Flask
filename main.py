@@ -197,6 +197,7 @@ def user_page(id):
                     return redirect('/')
                 else:
                     abort(404)
+            return render_template("user.html", form=form, user=user, title=user.name)
         return render_template("user.html", user=user, title=user.name)
     else:
         abort(404)

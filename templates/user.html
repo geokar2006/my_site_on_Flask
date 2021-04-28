@@ -23,11 +23,8 @@
 </div>
 {% endif %}
 <br>
-{% if current_user.is_authenticated %}
+{% if current_user.is_authenticated and (current_user.is_admin or current_user.is_approved) %}
 <h3>{{ user.email }}</h3>
 {% else %}
-<h3>{{_("Войдите или зарегистрируйтесь для просмотра почты")}}</h3>
 {% endif %}
-</p>
-
 {% endblock %}
