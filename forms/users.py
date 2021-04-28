@@ -1,15 +1,49 @@
+import re
 from flask_wtf import FlaskForm
 from flask_babel import _
+from email_validator import validate_email, EmailNotValidError
 from wtforms import PasswordField, StringField, TextAreaField, SubmitField, BooleanField, Label
 from wtforms.fields.html5 import EmailField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, ValidationError, equal_to
+from data import db_session
+from data.users import User
+
+
+def email_validator(form, email):
+    try:
+        validate_email(email.data, allow_smtputf8=False)
+    except EmailNotValidError as e:
+        raise ValidationError(str(e))
+    db_sess = db_session.create_session()
+    finded = db_sess.query(User).filter(User.email == email.data).first()
+    if finded:
+        raise ValidationError(_("Данная почта уже использована"))
+
+
+def password_validator(form, password):
+    paswd = password.data
+    if len(paswd) < 8:
+        raise ValidationError(_("Минамальное колличество символов в пароле: 8"))
+    elif re.search('[0-9]', paswd) is None:
+        raise ValidationError(_("Пароль должен иметь цифры"))
+    elif re.search('[A-Z]', paswd) is None:
+        raise ValidationError(_("Пароль должен иметь заглавные буквы"))
+    elif ' ' in paswd:
+        raise ValidationError(_("Пароль НЕ должен иметь пробелы"))
+
+
+def user_name_check(form, user):
+    db_sess = db_session.create_session()
+    finded = db_sess.query(User).filter(User.name == user.data).first()
+    if finded:
+        raise ValidationError(_("Имя пользывателя занято"))
 
 
 class RegisterForm(FlaskForm):
-    email = EmailField(validators=[DataRequired()])
-    password = PasswordField(validators=[DataRequired()])
-    password_again = PasswordField(validators=[DataRequired()])
-    name = StringField(validators=[DataRequired()])
+    email = EmailField(validators=[DataRequired(), email_validator])
+    password = PasswordField(validators=[DataRequired(), password_validator])
+    password_again = PasswordField(validators=[DataRequired(), equal_to('password_again')])
+    name = StringField(validators=[DataRequired(), user_name_check])
     about = TextAreaField()
     submit = SubmitField()
 
